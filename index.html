@@ -682,11 +682,14 @@
       <!-- TAB 1: LEGAL -->
       <div class="tab-panel" id="tab-1">
         <div id="legal-app-indicators" class="legal-app-indicators" style="display:none;"></div>
+        <div id="legal-direct-entry-note" style="display:none;margin-bottom:16px;padding:12px 16px;background:rgba(139,105,20,.08);border:1px solid rgba(139,105,20,.3);border-radius:var(--r-md);font-size:13px;color:var(--accent-primary);line-height:1.7;">
+          ✏️ <strong>New worker — direct entry mode.</strong> Type registration numbers and expiry dates directly. These will be saved when you click <strong>Save Worker</strong>.
+        </div>
 
         <div class="modal-section-title">2.1 &nbsp;Passport</div>
         <div class="auto-status-row"><span class="auto-status-label">Status</span><span class="legal-status-badge" id="lq_passport_badge">—</span><span class="auto-status-hint">Auto-determined</span></div>
         <div class="modal-grid" id="passport-section">
-          <div class="form-group"><label>Passport Number</label><input type="text" id="f_passport_num" readonly class="readonly-field" placeholder="Auto-filled"/></div>
+          <div class="form-group"><label>Passport Number</label><input type="text" id="f_passport_num" placeholder="e.g. A12345678" oninput="refreshLegalStatuses()"/></div>
           <div class="form-group"><label>Passport Expiry Date</label><input type="date" id="f_passport_expiry" onchange="refreshLegalStatuses()"/></div>
         </div>
         <div id="passport-actions" class="legal-action-row"></div>

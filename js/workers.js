@@ -191,6 +191,12 @@ function updateWorkerLocation(wId, newLoc) {
 // ── ADD / EDIT MODAL ──────────────────────────────────────────
 function openAddWorkerModal() {
   editingId = null; currentAppWorkerId = null;
+  // Show direct entry note for new workers
+  const note = document.getElementById('legal-direct-entry-note');
+  if (note) note.style.display = 'block';
+  // Reset passport num auto-fill tracking
+  const pn = document.getElementById('f_passport_num');
+  if (pn) { pn.value = ''; pn.dataset.autoFilled = 'false'; }
   document.getElementById('modalTitle').textContent       = 'Add New Worker';
   document.getElementById('saveWorkerBtn').textContent    = 'Save Worker';
   clearForm(); switchTab(0);
@@ -393,7 +399,12 @@ function syncNameInitials() {
 function syncPassport() {
   const val = document.getElementById('f_passport')?.value || '';
   const el  = document.getElementById('f_passport_num');
-  if (el) el.value = val;
+  // Only auto-sync if the passport_num field is empty or was previously auto-filled
+  // Don't overwrite a value the user manually typed in the legal tab
+  if (el && (!el.value || el.dataset.autoFilled === 'true')) {
+    el.value = val;
+    el.dataset.autoFilled = 'true';
+  }
 }
 
 // ── CATEGORY DISPLAY ──────────────────────────────────────────

@@ -138,9 +138,11 @@ function refreshLegalStatuses() {
   setB('wp_status_badge',   ps);
 
   // Enable / disable sections based on eligibility
-  toggleSectionDisabled('quota-section',   qs === 'Ineligible');
-  toggleSectionDisabled('license-section', ls === 'Ineligible');
-  toggleSectionDisabled('permit-section',  ps === 'Ineligible');
+  // For new workers (not yet saved), always allow direct entry
+  const isNewWorker = !editingId;
+  toggleSectionDisabled('quota-section',   !isNewWorker && qs === 'Ineligible');
+  toggleSectionDisabled('license-section', !isNewWorker && ls === 'Ineligible');
+  toggleSectionDisabled('permit-section',  !isNewWorker && ps === 'Ineligible');
 
   // Renew / Add New buttons inside each section
   buildLegalActionBtns('passport-actions', 'Passport',        passStatus);

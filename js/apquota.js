@@ -181,16 +181,11 @@ async function assignWorkerToSlot(aqId, wId) {
   w.legal.quota.kdn     = aq.kdn;
   w.legal.quota.slot    = `Slot ${next}`;
 
-  // Financial transaction — AP Quota per slot
-  const price = parseFloat(docPrices['AP Quota']) || 0;
-  if (price > 0) {
-    saveFinancialEntry({ id: genId(), date: new Date().toISOString().slice(0, 10), workerName: w.general?.name || '—', location: w.general?.location || '—', docType: 'AP Quota', appType: 'Slot Assignment', qty: 1, unitPrice: price, total: price, appId: aq.id });
-  }
-
+  // Financial transaction — AP Quota per slot (single entry only)
   const savePs = [saveWorkerToDB(w)];
   const apPrice = parseFloat(docPrices['AP Quota']) || 0;
   if (apPrice > 0) {
-    savePs.push(saveFinancialEntry({ id: genId(), date: new Date().toISOString().slice(0,10), workerName: w.general?.name||'—', location: w.general?.location||'—', docType:'AP Quota', appType:'Slot Assignment', qty:1, unitPrice:apPrice, total:apPrice, appId:aq.id }));
+    savePs.push(saveFinancialEntry({ id: genId(), date: new Date().toISOString().slice(0,10), workerName: w.general?.name||'—', location: w.general?.location||'—', docType:'AP Quota', appType:'Slot Assignment', qty:1, unitPrice:apPrice, total:apPrice, appId: `${aq.id}_slot${next}` }));
   }
   Promise.all(savePs).then(() => { renderApQuotaTable(); renderWorkerTable(); showToast(`${w.general?.name||'Worker'} assigned to Slot ${next}.`); });
 }
@@ -243,12 +238,7 @@ async function saveApQuota() {
   const est = new Date(appDate); est.setDate(est.getDate() + 60);
   const data = { id: genId(), company, slots, appDate, estDuration: 60, estApproval: est.toISOString().slice(0, 10), approvalDate: '', kdn: '', expiry: '' };
 
-  // Financial: slots × AP Quota price
-  const price = parseFloat(docPrices['AP Quota']) || 0;
-  if (price > 0) {
-    saveFinancialEntry({ id: genId(), date: appDate, workerName: '—', location: '—', docType: 'AP Quota', appType: 'New Application', qty: slots, unitPrice: price, total: slots * price, appId: data.id });
-  }
-
+  // Financial: slots × AP Quota price (single entry only)
   const aqPrice = parseFloat(docPrices['AP Quota']) || 0;
   const savePs = [saveApQuotaToDB(data)];
   if (aqPrice > 0) {

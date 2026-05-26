@@ -285,6 +285,7 @@ async function saveApplication() {
 
   // Apply new expiry / registration number to worker record
   if (currentAppWorkerId && currentAppWorkerId !== '__NEW__') {
+    // Worker already saved — update in memory + DB
     const w = workers.find(x => x.id === currentAppWorkerId);
     if (w) {
       if (!w.legal) w.legal = {};
@@ -304,6 +305,24 @@ async function saveApplication() {
         if (regNumber)  w.legal.permit.reg    = regNumber;
       }
     }
+  } else if (currentAppWorkerId === '__NEW__') {
+    // Worker not saved yet — write back into the open worker form fields
+    // so the data is captured when the worker is eventually saved
+    if (docType === 'Passport') {
+      if (newExpiry)  { const el = document.getElementById('f_passport_expiry'); if (el) el.value = newExpiry; }
+      if (regNumber)  { const el = document.getElementById('f_passport_num'); if (el) { el.readOnly = false; el.value = regNumber; el.readOnly = true; } }
+    }
+    if (docType === 'Labour License') {
+      if (newExpiry)  { const el = document.getElementById('f_license_expiry'); if (el) el.value = newExpiry; }
+      if (regNumber)  { const el = document.getElementById('f_license_reg');    if (el) el.value = regNumber; }
+    }
+    if (docType === 'Work Permit') {
+      if (newExpiry)  { const el = document.getElementById('f_permit_expiry'); if (el) el.value = newExpiry; }
+      if (regNumber)  { const el = document.getElementById('f_permit_reg');    if (el) el.value = regNumber; }
+    }
+    // Refresh legal status display in the worker form
+    if (typeof refreshLegalStatuses === 'function') refreshLegalStatuses();
+    showToast('Legal data saved to form — remember to save the worker profile.');
   }
 
   // Financial entry is saved once below inside savePromises (uses getPriceAsOf)
@@ -324,6 +343,8 @@ async function saveApplication() {
     const w = workers.find(x => x.id === currentAppWorkerId);
     if (w) savePromises.push(saveWorkerToDB(w));
   }
+  // Note: for __NEW__ workers, legal data is written to form fields above
+  // and will be saved when the worker profile is saved
   // Save financial entry
   if (!isDataEntry && !editingAppId) {
     const price = getPriceAsOf(docType, appDate);
