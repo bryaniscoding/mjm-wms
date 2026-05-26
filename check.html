@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html><head><meta charset="UTF-8"/><title>MJM — DB Check</title>
+<style>body{font-family:monospace;padding:30px;background:#f8f9f6;} h2{color:#1a8c01;} .ok{color:#1a8c01;} .err{color:#d93025;} pre{background:#fff;padding:16px;border-radius:8px;border:1px solid #d8e4d4;overflow-x:auto;font-size:13px;}</style>
+</head><body>
+<h2>MJM Groups — Supabase Connection Check</h2>
+<div id="out">Checking...</div>
+<script>
+const URL = 'https://xbyowjlrkfrvgaypucck.supabase.co/rest/v1';
+const KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhieW93amxya2ZydmdheXB1Y2NrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk0MTgwNzYsImV4cCI6MjA5NDk5NDA3Nn0.XdGf4T5st6fCGnnLs5cI0JMct2FuKDPYMztbWjgArEg';
+const H = {'apikey':KEY,'Authorization':'Bearer '+KEY};
+
+async function check(table) {
+  try {
+    const r = await fetch(`${URL}/${table}?limit=5&select=id`, {headers:H});
+    const d = await r.json();
+    if (!r.ok) return `<span class="err">❌ ${table}: ${r.status} — ${JSON.stringify(d)}</span>`;
+    return `<span class="ok">✅ ${table}: ${Array.isArray(d)?d.length+' rows (sample)':'ok'}</span>`;
+  } catch(e) { return `<span class="err">❌ ${table}: ${e.message}</span>`; }
+}
+
+async function run() {
+  const tables = ['workers','applications','ap_quotas','work_locations','leave_applications','financials','price_history','ap_companies'];
+  const out = document.getElementById('out');
+  out.innerHTML = '';
+  for (const t of tables) {
+    const res = await check(t);
+    out.innerHTML += res + '<br/>';
+  }
+  // Also show full workers count
+  try {
+    const r = await fetch(`${URL}/workers?select=id,name`, {headers:H});
+    const d = await r.json();
+    out.innerHTML += `<br/><b>Total workers in DB: ${d.length}</b><br/>`;
+    out.innerHTML += `<pre>${JSON.stringify(d.slice(0,5), null, 2)}</pre>`;
+  } catch(e) {}
+}
+run();
+</script>
+</body></html>

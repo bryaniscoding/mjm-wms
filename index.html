@@ -1,0 +1,1251 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>MJM Groups — Worker Management System</title>
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700;800&family=Nunito+Sans:wght@300;400;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+  <link rel="icon" type="image/png" href="favicon.png?v=2"/>
+  <link rel="apple-touch-icon" href="favicon.png?v=2"/>
+  <link rel="stylesheet" href="style.css"/>
+</head>
+<body>
+
+<!-- ═══ SIDEBAR ═══ -->
+<div class="sidebar-overlay" id="sidebarOverlay" onclick="closeSidebarDrawer()"></div>
+<canvas id="particle-canvas"></canvas>
+<div id="app-root" style="display:none"><aside class="sidebar" id="sidebar">
+  <div class="sidebar-header">
+    <div class="logo">
+      <img src="data:image/jpeg;base64,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" alt="MJM Groups Logo" class="logo-img"/>
+      <div class="logo-text">
+        <span class="logo-title">MJM Groups</span>
+        <span class="logo-sub">Worker Management Hub</span>
+      </div>
+    </div>
+  </div>
+  <nav class="sidebar-nav">
+    <div class="nav-item" onclick="navigateTo('dashboard')">
+      <div class="nav-link" data-page="dashboard"><span class="nav-icon">⬡</span><span class="nav-label">Dashboard</span></div>
+    </div>
+
+    <div class="nav-section-label">Worker Data</div>
+    <div class="nav-child" onclick="navigateTo('worker-list')"       data-page="worker-list">👷 All Worker Profiles</div>
+    <div class="nav-child" onclick="navigateTo('worker-termination')" data-page="worker-termination">🚪 Worker Termination</div>
+
+    <div class="nav-section-label">Legal Documents</div>
+    <div class="nav-child" onclick="navigateTo('doc-status')"      data-page="doc-status">📄 Document Status</div>
+    <div class="nav-child" onclick="navigateTo('doc-application')" data-page="doc-application">📋 Document Application</div>
+
+    <div class="nav-section-label">AP Quota</div>
+    <div class="nav-child" onclick="navigateTo('ap-quota')" data-page="ap-quota">◎ AP Quota Status</div>
+
+    <div class="nav-section-label">Workers Leave</div>
+    <div class="nav-child" onclick="navigateTo('leave-applications')" data-page="leave-applications">🌴 Leave Applications</div>
+    <div class="nav-child" onclick="navigateTo('leave-status')"       data-page="leave-status">📊 Leave Status</div>
+
+    <div class="nav-section-label">Reports &amp; Analytics</div>
+    <div class="nav-child" onclick="navigateTo('financial-report')" data-page="financial-report">💰 Financial Report</div>
+
+    <div class="nav-section-label admin-only">User Management</div>
+    <div class="nav-child admin-only" onclick="navigateTo('user-management')" data-page="user-management">👥 All Users</div>
+
+    <div class="nav-section-label">System</div>
+    <div class="nav-item" onclick="navigateTo('settings')">
+      <div class="nav-link" data-page="settings"><span class="nav-icon">⚙</span><span class="nav-label">Settings</span></div>
+    </div>
+  </nav>
+  <div class="sidebar-footer" onclick="openProfileModal()" style="cursor:pointer;" title="Edit profile">
+    <div class="user-info">
+      <div class="user-avatar" id="sidebar-avatar">?</div>
+      <div>
+        <div class="user-name" id="sidebar-display-name">Loading…</div>
+        <div class="user-role" id="sidebar-role">—</div>
+      </div>
+    </div>
+  </div>
+</aside>
+
+<!-- ═══ MAIN CONTENT ═══ -->
+<main class="main-content">
+  <header class="topbar">
+    <button class="sidebar-toggle-btn" onclick="toggleSidebarCollapse()" title="Toggle sidebar">☰</button>
+    <button class="theme-toggle" id="theme-toggle-btn" onclick="toggleTheme()" title="Toggle dark mode">🌙</button>
+    <div class="topbar-breadcrumb" id="breadcrumb">Dashboard</div>
+    <div class="topbar-right">
+      <div class="topbar-date" id="topbar-date"></div>
+      <div class="topbar-profile" id="topbar-profile-btn" onclick="toggleProfileDropdown()" title="Your profile">
+        <div class="topbar-avatar" id="topbar-avatar">?</div>
+        <span class="topbar-username" id="topbar-username">Loading…</span>
+        <span style="font-size:11px;color:var(--text3);">▾</span>
+      </div>
+      <div class="profile-dropdown" id="profile-dropdown" style="display:none;">
+        <div class="profile-dropdown-header">
+          <div class="profile-dd-avatar" id="dd-avatar">?</div>
+          <div>
+            <div class="profile-dd-name" id="dd-name">—</div>
+            <div class="profile-dd-email" id="dd-email">—</div>
+            <div class="profile-dd-role" id="dd-role">—</div>
+          </div>
+        </div>
+        <div class="profile-dropdown-divider"></div>
+        <div class="profile-dropdown-item" onclick="closeProfileDropdown();openProfileModal()">✏️ &nbsp;Edit Profile</div>
+        <div class="profile-dropdown-divider"></div>
+        <div class="profile-dropdown-item danger" onclick="authLogout()">→ &nbsp;Sign Out</div>
+      </div>
+    </div>
+  </header>
+
+  <!-- DASHBOARD -->
+  <div class="page active" id="page-dashboard">
+
+    <div id="onboarding-banner" style="display:none;margin-bottom:20px;"></div>
+    <!-- Greeting -->
+    <div class="page-hero" style="margin-bottom:20px;">
+      <div class="page-hero-text">
+        <h1 id="greeting-text">Good morning.</h1>
+        <p>Here is your workforce overview at a glance.</p>
+      </div>
+      <div class="page-hero-badge">MJM Groups</div>
+    </div>
+
+    <!-- ══ PART A: Workforce Overview ══ -->
+    <div class="dash-section-title" style="margin-top:20px;"><span>👷</span> A. Workforce Overview</div>
+    <div class="dash-kpi-grid">
+      <div class="dash-kpi fade-up" style="border-top:3px solid #1460aa;">
+        <div class="dash-kpi-label">Active Workers</div>
+        <div class="dash-kpi-value" style="color:#1460aa;" id="kpi-active">—</div>
+        <div class="dash-kpi-sub">All active staff</div>
+      </div>
+      <div class="dash-kpi fade-up" style="border-top:3px solid var(--accent-sage);">
+        <div class="dash-kpi-label">Active TKI</div>
+        <div class="dash-kpi-value" style="color:var(--green);" id="kpi-tki">—</div>
+        <div class="dash-kpi-sub">Work permit holders</div>
+      </div>
+      <div class="dash-kpi fade-up" style="border-top:3px solid var(--accent-clay);">
+        <div class="dash-kpi-label">Active Contractors</div>
+        <div class="dash-kpi-value" style="color:#e65100;" id="kpi-contractor">—</div>
+        <div class="dash-kpi-sub">Local contractors</div>
+      </div>
+      <div class="dash-kpi fade-up" style="border-top:3px solid var(--accent-primary);">
+        <div class="dash-kpi-label">On Leave</div>
+        <div class="dash-kpi-value" style="color:var(--amber);" id="kpi-leave">—</div>
+        <div class="dash-kpi-sub">Approved &amp; active</div>
+      </div>
+      <div class="dash-kpi fade-up" style="border-top:3px solid #c0392b;">
+        <div class="dash-kpi-label">Absconded</div>
+        <div class="dash-kpi-value" style="color:var(--red);" id="kpi-absconded">—</div>
+        <div class="dash-kpi-sub">Marked absconded</div>
+      </div>
+    </div>
+
+    <!-- Combo chart -->
+    <div class="dash-chart-card" style="margin-bottom:18px;">
+      <div class="dash-chart-header">
+        <div class="dash-chart-title">Workforce Trend</div>
+        <div class="dash-chart-filters">
+          <select id="dash-granularity" onchange="renderDashboardChart()" title="Grouping">
+            <option value="month">By Month</option>
+            <option value="week">By Week</option>
+            <option value="year">By Year</option>
+          </select>
+          <label style="font-size:12px;color:var(--text3);">From</label>
+          <input type="date" id="dash-date-from" onchange="renderDashboardChart()" style="width:130px;"/>
+          <label style="font-size:12px;color:var(--text3);">To</label>
+          <input type="date" id="dash-date-to"   onchange="renderDashboardChart()" style="width:130px;"/>
+          <button class="btn-ghost btn-sm search-btn" onclick="resetDashChartFilter()">All Time</button>
+        </div>
+      </div>
+      <div class="dash-chart-legend">
+        <div class="dash-legend-item"><div class="dash-legend-dot" style="background:#1460aa;border-radius:3px;"></div>Active (area)</div>
+        <div class="dash-legend-item"><div class="dash-legend-dot" style="background:#1a8c01;border-radius:3px;"></div>TKI (area)</div>
+        <div class="dash-legend-item"><div class="dash-legend-dot" style="background:#e65100;border-radius:3px;"></div>Contractor (area)</div>
+        <div class="dash-legend-item"><div class="dash-legend-dot" style="background:#d4820a;border-radius:3px;width:14px;height:10px;"></div>On Leave (bar)</div>
+        <div class="dash-legend-item"><div class="dash-legend-dot" style="background:#d93025;border-radius:3px;width:14px;height:10px;"></div>Absconded (bar)</div>
+      </div>
+      <canvas id="workforceChart" style="width:100%;height:280px;display:block;"></canvas>
+      <div id="dash-empty-chart" style="display:none;text-align:center;padding:48px;color:var(--text3);font-style:italic;">No worker data yet. Add workers to see the trend.</div>
+    </div>
+
+    <!-- ══ PARTS B + C side by side ══ -->
+    <div class="dash-bc-grid">
+
+      <!-- PART B: Documentation Overview -->
+      <div class="dash-panel">
+        <div class="dash-section-title" style="margin-top:0;"><span>📄</span> B. Documentation Overview</div>
+        <div class="dash-capsule-list" id="dash-doc-list">
+          <div class="dash-capsule-empty">Loading…</div>
+        </div>
+      </div>
+
+      <!-- PART C: AP Quota Overview -->
+      <div class="dash-panel">
+        <div class="dash-section-title" style="margin-top:0;"><span>◎</span> C. AP Quota Overview</div>
+        <div class="dash-capsule-list" id="dash-ap-list">
+          <div class="dash-capsule-empty">Loading…</div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ALL WORKERS -->
+  <div class="page" id="page-worker-list">
+    <div class="page-header">
+      <div><h2>Worker Profiles</h2><p class="page-sub">All information there are, at the tip of your fingers.</p></div>
+      <div style="display:flex;gap:8px;">
+        <div style="position:relative;display:inline-block;" id="export-workers-wrap">
+<button class="btn-ghost btn-sm export-btn" onclick="openExportPicker('workers')">⬇ Export ▾</button>
+        </div>
+        <button class="btn-primary" onclick="openAddWorkerModal()">+ Add Worker</button>
+      </div>
+    </div>
+    <div class="filter-bar">
+      <div class="search-wrap"><input class="search-input" type="text" id="workerSearch" placeholder="Search workers…"/><span class="search-icon-right">🔍</span></div>
+      <select class="filter-select" id="categoryFilter"><option value="">All Categories</option><option value="TKI">TKI</option><option value="Contractor">Contractor</option></select>
+      <select class="filter-select" id="statusFilter"><option value="">All Status</option><option value="Active">Active</option><option value="Departing Soon">Departing Soon</option><option value="On Leave">On Leave</option><option value="Inactive">Inactive</option></select>
+      <select class="filter-select" id="locationFilter"><option value="">All Locations</option></select>
+      <select class="filter-select" id="companyFilter"><option value="">All AP Companies</option></select>
+      <button class="btn-primary btn-sm search-btn" onclick="filterWorkers()">Search</button>
+      <button class="btn-ghost btn-sm search-btn" onclick="clearWorkerFilters()">Clear</button>
+    </div>
+    <div class="table-wrap">
+      <table class="data-table">
+        <thead><tr>
+          <th class="sortable" data-col="name"     onclick="sortWorkers('name')">Worker <span class="sort-icon"></span></th>
+          <th class="sortable" data-col="category" onclick="sortWorkers('category')">Category <span class="sort-icon"></span></th>
+          <th class="sortable" data-col="status"   onclick="sortWorkers('status')">Status <span class="sort-icon"></span></th>
+          <th class="sortable" data-col="location" onclick="sortWorkers('location')">Work Location <span class="sort-icon"></span></th>
+          <th class="sortable" data-col="passport" onclick="sortWorkers('passport')">Passport <span class="sort-icon"></span></th>
+          <th class="sortable" data-col="company"  onclick="sortWorkers('company')">AP Quota Company <span class="sort-icon"></span></th>
+          <th class="sortable" data-col="license"  onclick="sortWorkers('license')">Labour License <span class="sort-icon"></span></th>
+          <th class="sortable" data-col="permit"   onclick="sortWorkers('permit')">Work Permit <span class="sort-icon"></span></th>
+          <th>Actions</th>
+        </tr></thead>
+        <tbody id="worker-table-body"></tbody>
+      </table>
+    </div>
+    <div class="table-count" id="table-count"></div>
+  </div>
+
+  <!-- WORKER TERMINATION LIST -->
+  <div class="page" id="page-worker-termination">
+    <div class="page-header">
+      <div><h2>Worker Termination</h2><p class="page-sub">Workers with a departure date or marked as absconded.</p></div>
+    </div>
+    <div class="filter-bar">
+      <div class="search-wrap"><input class="search-input" type="text" id="termSearch" placeholder="Search by name, ID, location…" oninput="renderTerminationTable()"/><span class="search-icon-right">🔍</span></div>
+      <select class="filter-select" id="termStatusFilter" onchange="renderTerminationTable()">
+        <option value="">All Statuses</option>
+        <option value="Leaving Soon">Leaving Soon</option>
+        <option value="Departed">Departed</option>
+        <option value="Absconded">Absconded</option>
+      </select>
+    </div>
+    <div class="table-wrap">
+      <table class="data-table">
+        <thead><tr>
+          <th>Status</th>
+          <th>Worker</th>
+          <th>Work Location</th>
+          <th>AP Company</th>
+          <th>Notif. Date</th>
+          <th>Est. Departure</th>
+          <th>Actions</th>
+        </tr></thead>
+        <tbody id="termination-table-body"></tbody>
+      </table>
+    </div>
+    <div class="table-count" id="termination-count"></div>
+  </div>
+
+  <!-- DOCUMENT STATUS -->
+  <div class="page" id="page-doc-status">
+    <div class="page-header">
+      <div><h2>Document Status</h2><p class="page-sub">Track all critical worker documents with recorded expiry dates.</p></div>
+      <div style="position:relative;" id="export-docs-wrap">
+<button class="btn-ghost btn-sm export-btn" onclick="openExportPicker('doc_status')">⬇ Export ▾</button>
+      </div>
+    </div>
+    <div class="filter-bar">
+      <div class="search-wrap"><input class="search-input" type="text" id="docSearch" placeholder="Search…"/><span class="search-icon-right">🔍</span></div>
+      <select class="filter-select" id="docDocTypeFilter"><option value="">All Doc Types</option><option>Passport</option><option>Labour License</option><option>Work Permit</option></select>
+      <select class="filter-select" id="docLocationFilter"><option value="">All Locations</option></select>
+      <select class="filter-select" id="docCompanyFilter"><option value="">All AP Companies</option></select>
+    </div>
+    <div class="filter-bar" style="margin-top:6px;">
+      <span style="font-size:12px;color:var(--text3);white-space:nowrap;padding:0 4px;">Filter by expiry date range:</span>
+      <div class="date-pair">
+        <input type="date" class="filter-date" id="docDateFrom"/>
+        <span class="date-sep">—</span>
+        <input type="date" class="filter-date" id="docDateTo"/>
+      </div>
+      <button class="btn-primary btn-sm search-btn" onclick="filterDocs()">Search</button>
+      <button class="btn-ghost btn-sm search-btn" onclick="clearDocFilters()">Clear</button>
+    </div>
+    <div class="table-wrap">
+      <table class="data-table">
+        <thead><tr>
+          <th class="sortable" data-col="docType"  onclick="sortDocs('docType')">Document Type <span class="sort-icon"></span></th>
+          <th class="sortable" data-col="name"     onclick="sortDocs('name')">Worker Name <span class="sort-icon"></span></th>
+          <th class="sortable" data-col="location" onclick="sortDocs('location')">Work Location <span class="sort-icon"></span></th>
+          <th class="sortable" data-col="company"  onclick="sortDocs('company')">AP Quota Company <span class="sort-icon"></span></th>
+          <th class="sortable" data-col="expiry"   onclick="sortDocs('expiry')">Expiry Date <span class="sort-icon"></span></th>
+          <th>Action</th>
+        </tr></thead>
+        <tbody id="doc-table-body"></tbody>
+      </table>
+    </div>
+    <div class="table-count" id="doc-count"></div>
+  </div>
+
+  <!-- DOCUMENT APPLICATION STATUS -->
+  <div class="page" id="page-doc-application">
+    <div class="page-header"><div><h2>Document Application Status</h2><p class="page-sub">Track all renewal and new application progress.</p></div><button class="btn-primary" onclick="openNewApplicationModal()">+ New Application</button></div>
+    <div class="filter-bar-wrap">
+      <div class="filter-bar filter-bar-top">
+        <div class="search-wrap"><input class="search-input" type="text" id="appSearch" placeholder="Search applications…"/><span class="search-icon-right">🔍</span></div>
+        <select class="filter-select" id="appDocTypeFilter"><option value="">All Doc Types</option><option>Passport</option><option>Labour License</option><option>Work Permit</option><option>C.O.M</option></select>
+        <select class="filter-select" id="appLocationFilter"><option value="">All Locations</option></select>
+        <select class="filter-select" id="appStatusFilter"><option value="">All Status</option><option value="IN PROGRESS">In Progress</option><option value="PENDING RETURN">Pending Return</option><option value="COMPLETED">Completed</option></select>
+        <button class="btn-primary btn-sm search-btn" onclick="filterApplications()">Search</button>
+        <button class="btn-ghost btn-sm search-btn" onclick="clearAppFilters()">Clear</button>
+      </div>
+      <div class="filter-bar-dates">
+        <div class="date-group"><span class="date-group-label">Application Date</span><div class="date-pair"><input type="date" class="filter-date" id="appDateFrom"/><span class="date-sep">—</span><input type="date" class="filter-date" id="appDateTo"/></div></div>
+        <div class="date-group"><span class="date-group-label">Received Date</span><div class="date-pair"><input type="date" class="filter-date" id="appRecvFrom"/><span class="date-sep">—</span><input type="date" class="filter-date" id="appRecvTo"/></div></div>
+        <div class="date-group"><span class="date-group-label">Handover Date</span><div class="date-pair"><input type="date" class="filter-date" id="appHandFrom"/><span class="date-sep">—</span><input type="date" class="filter-date" id="appHandTo"/></div></div>
+      </div>
+    </div>
+    <div class="table-wrap" style="margin-top:14px;">
+      <table class="data-table">
+        <thead><tr>
+          <th class="sortable" data-col="appStatus"  onclick="sortApps('appStatus')">Status <span class="sort-icon"></span></th>
+          <th class="sortable" data-col="docType"    onclick="sortApps('docType')">Document Type <span class="sort-icon"></span></th>
+          <th class="sortable" data-col="appType"    onclick="sortApps('appType')">Type <span class="sort-icon"></span></th>
+          <th class="sortable" data-col="location"   onclick="sortApps('location')">Work Location <span class="sort-icon"></span></th>
+          <th class="sortable" data-col="workerName" onclick="sortApps('workerName')">Worker Name <span class="sort-icon"></span></th>
+          <th class="sortable" data-col="appDate"    onclick="sortApps('appDate')">Application Date <span class="sort-icon"></span></th>
+          <th class="sortable" data-col="estReceive" onclick="sortApps('estReceive')">Est. Receive Date <span class="sort-icon"></span></th>
+          <th>Update</th>
+        </tr></thead>
+        <tbody id="app-table-body"></tbody>
+      </table>
+    </div>
+    <div class="table-count" id="app-count"></div>
+  </div>
+
+  <!-- AP QUOTA OVERVIEW -->
+  <div class="page" id="page-ap-quota">
+    <div class="page-header">
+      <div><h2>AP Quota Overview</h2><p class="page-sub">Manage all registered AP Quota entries and assigned workers.</p></div>
+      <div style="display:flex;gap:8px;">
+        <div style="position:relative;" id="export-aq-wrap">
+<button class="btn-ghost btn-sm export-btn" onclick="openExportPicker('ap_quota')">⬇ Export ▾</button>
+        </div>
+        <button class="btn-primary" onclick="openApQuotaModal()">+ Add New AP Quota</button>
+      </div>
+    </div>
+    <div class="filter-bar">
+      <div class="search-wrap"><input class="search-input" type="text" id="apSearch" placeholder="Search by company, KDN number…"/><span class="search-icon-right">🔍</span></div>
+      <button class="btn-primary btn-sm search-btn" onclick="filterApQuota()">Search</button>
+      <button class="btn-ghost btn-sm search-btn" onclick="clearApFilters()">Clear</button>
+    </div>
+    <div class="table-wrap">
+      <table class="data-table">
+        <thead><tr>
+          <th class="sortable" data-col="aqStatus" onclick="sortAp('aqStatus')">Status <span class="sort-icon"></span></th>
+          <th class="sortable" data-col="company"  onclick="sortAp('company')">Company Name <span class="sort-icon"></span></th>
+          <th class="sortable" data-col="kdn"      onclick="sortAp('kdn')">KDN Reference No. <span class="sort-icon"></span></th>
+          <th class="sortable" data-col="slots"    onclick="sortAp('slots')">Slots <span class="sort-icon"></span></th>
+          <th>Slot Grid</th>
+          <th class="sortable" data-col="expiry"   onclick="sortAp('expiry')">Quota Expiry <span class="sort-icon"></span></th>
+          <th class="sortable" data-col="appDate"  onclick="sortAp('appDate')">Application Date <span class="sort-icon"></span></th>
+          <th class="sortable" data-col="approval" onclick="sortAp('approval')">Date of Approval <span class="sort-icon"></span></th>
+          <th>Actions</th>
+        </tr></thead>
+        <tbody id="ap-table-body"></tbody>
+      </table>
+    </div>
+    <div class="table-count" id="ap-count"></div>
+  </div>
+
+  <!-- FINANCIAL REPORT -->
+  <div class="page" id="page-financial-report">
+    <div class="page-header">
+      <div><h2>Financial Report</h2><p class="page-sub">Track all document application costs and generate custom reports.</p></div>
+      <button class="btn-danger btn-sm admin-only" onclick="cleanOrphanedFinancials()" title="Remove financial records with no matching application">🧹 Clean Orphaned Records</button>
+    </div>
+    <div class="filter-bar">
+      <div class="search-wrap"><input class="search-input" type="text" id="finSearch" placeholder="Search by worker, document type, location…"/><span class="search-icon-right">🔍</span></div>
+      <select class="filter-select" id="finDocFilter"><option value="">All Doc Types</option><option>Passport</option><option>Labour License</option><option>Work Permit</option><option>C.O.M</option><option>AP Quota</option></select>
+      <select class="filter-select" id="finLocFilter"><option value="">All Locations</option></select>
+      <div class="date-pair">
+        <input type="date" class="filter-date" id="finDateFrom" title="From"/>
+        <span class="date-sep">—</span>
+        <input type="date" class="filter-date" id="finDateTo"   title="To"/>
+      </div>
+      <button class="btn-primary btn-sm search-btn" onclick="filterFinancial()">Search</button>
+      <button class="btn-ghost btn-sm search-btn" onclick="clearFinFilters()">Clear</button>
+      <button class="btn-ghost btn-sm export-btn" onclick="openExportPicker('financial')" style="margin-left:8px;">⬇ Export ▾</button>
+    </div>
+    <div class="fin-summary" id="fin-summary"></div>
+    <div class="table-wrap" style="margin-top:16px;">
+      <table class="data-table">
+        <thead><tr>
+          <th class="sortable" data-col="date"       onclick="sortFin('date')">Date <span class="sort-icon"></span></th>
+          <th class="sortable" data-col="workerName" onclick="sortFin('workerName')">Worker Name <span class="sort-icon"></span></th>
+          <th class="sortable" data-col="docType"    onclick="sortFin('docType')">Document Type <span class="sort-icon"></span></th>
+          <th class="sortable" data-col="appType"    onclick="sortFin('appType')">Application Type <span class="sort-icon"></span></th>
+          <th class="sortable" data-col="location"   onclick="sortFin('location')">Work Location <span class="sort-icon"></span></th>
+          <th class="sortable" data-col="qty"        onclick="sortFin('qty')">Qty <span class="sort-icon"></span></th>
+          <th class="sortable" data-col="unitPrice"  onclick="sortFin('unitPrice')">Unit Price (RM) <span class="sort-icon"></span></th>
+          <th class="sortable" data-col="total"      onclick="sortFin('total')">Total (RM) <span class="sort-icon"></span></th>
+        </tr></thead>
+        <tbody id="fin-table-body"></tbody>
+      </table>
+    </div>
+    <div class="table-count" id="fin-count"></div>
+  </div>
+
+  <!-- SETTINGS -->
+  <!-- SETTINGS: Overview -->
+  <div class="page" id="page-settings">
+    <div class="page-header"><div><h2>System Settings</h2><p class="page-sub">Owner control panel — configure system presets.</p></div></div>
+    <div class="settings-overview-grid">
+      <div class="settings-card" onclick="navigateTo('settings-locations')">
+        <div class="settings-card-icon">📍</div>
+        <div class="settings-card-body"><div class="settings-card-title">Work Locations &amp; Prefixes</div><div class="settings-card-sub">Manage work locations and Worker ID prefixes.</div></div>
+        <button class="btn-ghost btn-sm">Adjust Settings →</button>
+      </div>
+      <div class="settings-card" onclick="navigateTo('settings-prices')">
+        <div class="settings-card-icon">💰</div>
+        <div class="settings-card-body"><div class="settings-card-title">Document Application Prices</div><div class="settings-card-sub">Set and track historical prices per document type.</div></div>
+        <button class="btn-ghost btn-sm">Adjust Settings →</button>
+      </div>
+      <div class="settings-card" onclick="navigateTo('settings-companies')">
+        <div class="settings-card-icon">🏢</div>
+        <div class="settings-card-body"><div class="settings-card-title">AP Quota Companies</div><div class="settings-card-sub">Manage available companies for AP Quota applications.</div></div>
+        <button class="btn-ghost btn-sm">Adjust Settings →</button>
+      </div>
+      <div class="settings-card" onclick="navigateTo('settings-templates')">
+        <div class="settings-card-icon">📋</div>
+        <div class="settings-card-body"><div class="settings-card-title">Report Templates</div><div class="settings-card-sub">Configure PDF and Excel export layout, columns, branding for each report.</div></div>
+        <button class="btn-ghost btn-sm">Adjust Settings →</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- SETTINGS: Work Locations -->
+  <div class="page" id="page-settings-locations">
+    <div class="page-header">
+      <div><h2>Work Locations &amp; Prefixes</h2><p class="page-sub">Registered locations appear in worker dropdowns. Prefix is used for auto-assigning Worker IDs.</p></div>
+      <div style="display:flex;gap:8px;"><button class="btn-ghost btn-sm" onclick="navigateTo('settings')">← Back</button><button class="btn-primary btn-sm" onclick="openAddLocationModal()">+ Add Location</button></div>
+    </div>
+    <div class="table-wrap"><table class="data-table"><thead><tr><th>Location Name</th><th>Prefix</th><th>Next ID</th><th>Actions</th></tr></thead><tbody id="location-table-body"></tbody></table></div>
+  </div>
+
+  <!-- SETTINGS: Prices -->
+  <div class="page" id="page-settings-prices">
+    <div class="page-header">
+      <div><h2>Document Application Prices</h2><p class="page-sub">Set effective-date prices. Each save adds a historical record. Use 📋 History to view, edit or delete past records.</p></div>
+      <div style="display:flex;gap:8px;">
+        <button class="btn-primary btn-sm" onclick="saveAllPrices()">💾 Save All</button>
+        <button class="btn-ghost btn-sm" onclick="navigateTo('settings')">← Back</button>
+      </div>
+    </div>
+    <div class="settings-section" style="margin-top:0;">
+      <div class="price-grid" id="price-grid"></div>
+    </div>
+  </div>
+
+  <!-- SETTINGS: AP Quota Companies -->
+  <div class="page" id="page-settings-companies">
+    <div class="page-header">
+      <div><h2>AP Quota Companies</h2><p class="page-sub">Companies listed here will appear as dropdown options when creating AP Quota applications.</p></div>
+      <div style="display:flex;gap:8px;"><button class="btn-ghost btn-sm" onclick="navigateTo('settings')">← Back</button><button class="btn-primary btn-sm" onclick="openApCompanyModal()">+ Add Company</button></div>
+    </div>
+    <div class="table-wrap"><table class="data-table"><thead><tr><th>Company Name</th><th>Registration No.</th><th>Actions</th></tr></thead><tbody id="ap-company-table-body"></tbody></table></div>
+  </div>
+
+
+  <!-- LEAVE APPLICATIONS -->
+  <div class="page" id="page-leave-applications">
+    <div class="page-header"><div><h2>Workers Leave Applications</h2><p class="page-sub">Manage and track all leave requests.</p></div><button class="btn-primary" onclick="openLeaveModal()">+ Add Leave Application</button></div>
+    <div class="filter-bar">
+      <div class="search-wrap"><input class="search-input" type="text" id="leaveSearch" placeholder="Search by worker, ref no., location…"/><span class="search-icon-right">🔍</span></div>
+      <select class="filter-select" id="leaveStatusFilter"><option value="">All Status</option><option>Pending</option><option>Approved</option><option>Rejected</option></select>
+      <select class="filter-select" id="leaveLocFilter" onchange="filterLeave()"><option value="">All Locations</option></select>
+      <button class="btn-primary btn-sm search-btn" onclick="filterLeave()">Search</button>
+      <button class="btn-ghost btn-sm search-btn" onclick="clearLeaveFilters()">Clear</button>
+    </div>
+    <div class="filter-bar" style="margin-top:4px;">
+      <span style="font-size:12px;color:var(--text3);white-space:nowrap;">Application Date:</span>
+      <div class="date-pair"><input type="date" class="filter-date" id="leaveAppFrom"/><span class="date-sep">—</span><input type="date" class="filter-date" id="leaveAppTo"/></div>
+      <span style="font-size:12px;color:var(--text3);white-space:nowrap;margin-left:12px;">Leave Start:</span>
+      <div class="date-pair"><input type="date" class="filter-date" id="leaveStartFrom"/><span class="date-sep">—</span><input type="date" class="filter-date" id="leaveStartTo"/></div>
+      <span style="font-size:12px;color:var(--text3);white-space:nowrap;margin-left:12px;">Est. Return:</span>
+      <div class="date-pair"><input type="date" class="filter-date" id="leaveReturnFrom"/><span class="date-sep">—</span><input type="date" class="filter-date" id="leaveReturnTo"/></div>
+    </div>
+    <div class="table-wrap" style="margin-top:14px;">
+      <table class="data-table">
+        <thead><tr>
+          <th class="sortable" data-col="status"    onclick="sortLeave('status')">Status <span class="sort-icon"></span></th>
+          <th class="sortable" data-col="appNumber" onclick="sortLeave('appNumber')">Ref No. <span class="sort-icon"></span></th>
+          <th class="sortable" data-col="workerName" onclick="sortLeave('workerName')">Worker <span class="sort-icon"></span></th>
+          <th class="sortable" data-col="_loc"       onclick="sortLeave('_loc')">Work Location <span class="sort-icon"></span></th>
+          <th class="sortable" data-col="appDate"    onclick="sortLeave('appDate')">Application Date <span class="sort-icon"></span></th>
+          <th class="sortable" data-col="startDate"  onclick="sortLeave('startDate')">Leave Start <span class="sort-icon"></span></th>
+          <th class="sortable" data-col="duration"   onclick="sortLeave('duration')">Duration <span class="sort-icon"></span></th>
+          <th class="sortable" data-col="estReturn"  onclick="sortLeave('estReturn')">Est. Return <span class="sort-icon"></span></th>
+          <th>Actions</th>
+        </tr></thead>
+        <tbody id="leave-table-body"></tbody>
+      </table>
+    </div>
+    <div class="table-count" id="leave-count"></div>
+  </div>
+
+  <!-- LEAVE STATUS -->
+  <div class="page" id="page-leave-status">
+    <div class="page-header">
+      <div><h2>Workers Leave Status</h2><p class="page-sub">Monitor workers currently on leave, returning soon, or absconded.</p></div>
+      <div style="position:relative;" id="export-leave-wrap">
+<button class="btn-ghost btn-sm export-btn" onclick="openExportPicker('leave_status')">⬇ Export ▾</button>
+      </div>
+    </div>
+    <div class="filter-bar">
+      <div class="search-wrap"><input class="search-input" type="text" id="leaveStatusSearch" placeholder="Search by worker, ref no., location…"/><span class="search-icon-right">🔍</span></div>
+      <select class="filter-select" id="leaveStatusStatusFilter"><option value="">All Status</option><option>On Leave</option><option>Leave Coming Soon</option><option>Approved</option><option>Returned</option><option>Absconded</option></select>
+      <select class="filter-select" id="leaveStatusLocFilter"><option value="">All Locations</option></select>
+      <button class="btn-primary btn-sm search-btn" onclick="filterLeaveStatus()">Search</button>
+      <button class="btn-ghost btn-sm search-btn" onclick="clearLeaveStatusFilters()">Clear</button>
+    </div>
+    <div class="filter-bar" style="margin-top:4px;">
+      <span style="font-size:12px;color:var(--text3);white-space:nowrap;">Start Date:</span>
+      <div class="date-pair"><input type="date" class="filter-date" id="leaveStatusStartFrom"/><span class="date-sep">—</span><input type="date" class="filter-date" id="leaveStatusStartTo"/></div>
+      <span style="font-size:12px;color:var(--text3);white-space:nowrap;margin-left:12px;">Est. Return:</span>
+      <div class="date-pair"><input type="date" class="filter-date" id="leaveStatusReturnFrom"/><span class="date-sep">—</span><input type="date" class="filter-date" id="leaveStatusReturnTo"/></div>
+      <span style="font-size:12px;color:var(--text3);white-space:nowrap;margin-left:12px;">Actual Return:</span>
+      <div class="date-pair"><input type="date" class="filter-date" id="leaveStatusActualFrom"/><span class="date-sep">—</span><input type="date" class="filter-date" id="leaveStatusActualTo"/></div>
+    </div>
+    <div class="table-wrap" style="margin-top:14px;">
+      <table class="data-table">
+        <thead><tr>
+          <th class="sortable" data-col="_displayStatus" onclick="sortLeaveStatus('_displayStatus')">Status <span class="sort-icon"></span></th>
+          <th class="sortable" data-col="workerName"     onclick="sortLeaveStatus('workerName')">Worker <span class="sort-icon"></span></th>
+          <th class="sortable" data-col="appNumber"      onclick="sortLeaveStatus('appNumber')">Ref No. <span class="sort-icon"></span></th>
+          <th class="sortable" data-col="_loc"           onclick="sortLeaveStatus('_loc')">Work Location <span class="sort-icon"></span></th>
+          <th class="sortable" data-col="startDate"      onclick="sortLeaveStatus('startDate')">Start Date <span class="sort-icon"></span></th>
+          <th class="sortable" data-col="estReturn"      onclick="sortLeaveStatus('estReturn')">Est. Return <span class="sort-icon"></span></th>
+          <th>Remaining</th>
+          <th class="sortable" data-col="actualReturn"   onclick="sortLeaveStatus('actualReturn')">Actual Return <span class="sort-icon"></span></th>
+          <th>Actions</th>
+        </tr></thead>
+        <tbody id="leave-status-table-body"></tbody>
+      </table>
+    </div>
+    <div class="table-count" id="leave-status-count"></div>
+  </div>
+  <!-- USER MANAGEMENT -->
+  <div class="page" id="page-user-management">
+    <div class="page-header">
+      <div><h2>User Management</h2><p class="page-sub">Manage who can access the system and their role.</p></div>
+      <button class="btn-primary" onclick="openInviteUserModal()">+ Invite User</button>
+    </div>
+    <div class="filter-bar">
+      <div class="search-wrap"><input class="search-input" type="text" id="userMgmtSearch" placeholder="Search by email…"/><span class="search-icon-right">🔍</span></div>
+      <select class="filter-select" id="userRoleFilter"><option value="">All Roles</option><option value="admin">Admin</option><option value="editor">Editor</option><option value="viewer">Viewer</option></select>
+      <button class="btn-primary btn-sm search-btn" onclick="filterUsers()">Search</button>
+      <button class="btn-ghost btn-sm search-btn" onclick="clearUserFilters()">Clear</button>
+    </div>
+    <div class="table-wrap">
+      <table class="data-table">
+        <thead><tr>
+          <th>Email</th>
+          <th>Role</th>
+          <th>Status</th>
+          <th>Joined</th>
+          <th>Actions</th>
+        </tr></thead>
+        <tbody id="user-mgmt-table-body"></tbody>
+      </table>
+    </div>
+    <div class="table-count" id="user-mgmt-count"></div>
+    <div class="role-legend" style="margin-top:20px;background:var(--white);border:1.5px solid var(--border);border-radius:var(--radius);padding:20px 24px;">
+      <div style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--text3);margin-bottom:12px;">Role Permissions</div>
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;">
+        <div style="padding:14px;background:var(--exp-danger-bg);border-radius:var(--radius-sm);border:1.5px solid #f5c6c3;">
+          <div style="font-weight:700;color:var(--red);margin-bottom:6px;">🔑 Admin</div>
+          <div style="font-size:12.5px;color:var(--text2);line-height:1.7;">Full access. Can manage all data, system settings, and user roles.</div>
+        </div>
+        <div style="padding:14px;background:var(--amber-bg);border-radius:var(--radius-sm);border:1.5px solid #f0d080;">
+          <div style="font-weight:700;color:var(--amber);margin-bottom:6px;">✏️ Editor</div>
+          <div style="font-size:12.5px;color:var(--text2);line-height:1.7;">Can add and edit all worker data, documents, leaves, AP quota. No system settings.</div>
+        </div>
+        <div style="padding:14px;background:var(--blue-bg);border-radius:var(--radius-sm);border:1.5px solid #b8d4f8;">
+          <div style="font-weight:700;color:var(--blue);margin-bottom:6px;">👁️ Viewer</div>
+          <div style="font-size:12.5px;color:var(--text2);line-height:1.7;">Read-only access. Can view all records but cannot add, edit or delete.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SETTINGS: Report Templates -->
+  <div class="page" id="page-settings-templates">
+    <div class="page-header">
+      <div><h2>Report Templates</h2><p class="page-sub">Configure PDF and Excel export layout per report type. Admin only.</p></div>
+      <button class="btn-ghost btn-sm" onclick="navigateTo('settings')">← Back</button>
+    </div>
+    <div class="settings-overview-grid" id="report-template-list">
+      <div style="color:var(--text3);font-style:italic;padding:20px;">Loading templates…</div>
+    </div>
+  </div>
+
+  <!-- REPORT BUILDER (full page) -->
+  <div class="page" id="page-report-builder" style="padding:0;">
+    <div id="report-builder-content" style="height:100%;"></div>
+  </div>
+
+  <!-- COMING SOON (fallback) -->
+  <div class="page" id="page-coming-soon">
+    <div class="coming-soon-page"><div class="cs-icon">🚧</div><div class="cs-title">Coming Soon</div><div class="cs-sub">This section is under development.</div></div>
+  </div>
+</main>
+
+<!-- ═══ MODAL: ADD / EDIT WORKER ═══ -->
+<div class="modal-overlay" id="workerModal" onclick="closeModalOutside(event)">
+  <div class="modal modal-large">
+    <div class="modal-header"><h3 id="modalTitle">Add New Worker</h3><button class="modal-close" onclick="closeWorkerModal()">✕</button></div>
+    <div class="modal-tabs">
+      <button class="modal-tab active" onclick="switchTab(0)">General Info</button>
+      <button class="modal-tab"        onclick="switchTab(1)">Legal Info</button>
+      <button class="modal-tab"        onclick="switchTab(2)">Claims</button>
+    </div>
+    <div class="modal-body">
+
+      <!-- TAB 0: GENERAL -->
+      <div class="tab-panel active" id="tab-0">
+        <div class="modal-section-title">General Information</div>
+        <div class="modal-grid">
+          <div class="form-group">
+            <label>Profile Photo</label>
+            <div class="photo-upload-row">
+              <div class="photo-circle"><img id="photoPreview" src="" alt="" style="display:none;"/><span id="photoInitials" class="photo-initials">?</span></div>
+              <div class="photo-upload-actions">
+                <label class="btn-secondary btn-sm upload-label" for="f_photo">Choose Photo</label>
+                <input type="file" id="f_photo" accept="image/*" onchange="previewPhoto(event)" style="display:none;"/>
+                <button class="btn-sm btn-ghost" onclick="removePhoto()">Remove</button>
+                <span class="photo-hint">JPG or PNG, max 2MB</span>
+              </div>
+            </div>
+          </div>
+          <div class="form-group">
+            <label>Remarks / Notes</label>
+            <textarea id="f_remarks" placeholder="Any additional notes about this worker…" style="height:95px;margin-top:2px;"></textarea>
+          </div>
+          <div class="form-group"><label>Full Name <span class="required">*</span></label><input type="text" id="f_name" placeholder="e.g. Ahmad bin Ismail" oninput="syncNameInitials()"/></div>
+          <div class="form-group"><label>Worker ID <span class="field-note">(auto-assigned on save)</span></label><input type="text" id="f_workerid" placeholder="Auto-assigned (or enter manually)"/></div>
+          <div class="form-group"><label>Nationality <span class="required">*</span></label><input type="text" id="f_nationality" placeholder="e.g. Indonesian"/></div>
+          <div class="form-group"><label>IC / Passport Number</label><input type="text" id="f_passport" placeholder="e.g. A12345678" oninput="syncPassport()"/></div>
+          <div class="form-group"><label>Joining Date <span class="required">*</span></label><input type="date" id="f_joining" onchange="onJoiningChange()"/></div>
+          <div class="form-group"><label>Recruitment Date <span class="field-note">(contract / letter date, optional)</span></label><input type="date" id="f_recruitment" onchange="onRecruitmentChange()"/></div>
+          <div class="form-group"><label>Work Location</label><select id="f_location"><option value="">Select location…</option></select></div>
+          <div class="form-group"><label>Termination Date</label><input type="date" id="f_termination" onchange="updateCategoryDisplay()"/></div>
+          <div class="form-group"><label>Departure Date</label><input type="date" id="f_departure"/></div>
+          <div class="form-group full-width">
+            <label style="display:flex;align-items:center;gap:10px;cursor:pointer;">
+              <input type="checkbox" id="f_absconded" style="width:18px;height:18px;cursor:pointer;" onchange="onAbscondedChange()"/>
+              <span>Mark as Absconded <span class="field-note">(auto-fills today as departure date and makes worker Inactive)</span></span>
+            </label>
+            <div id="f_absconded_note" style="display:none;margin-top:6px;font-size:12px;color:var(--exp-danger);font-style:italic;padding:5px 0 0 28px;"></div>
+          </div>
+          <div class="form-group full-width">
+            <label>Category <span class="field-note">(auto-determined)</span></label>
+            <div class="category-display">
+              <span class="category-badge" id="categoryBadge">—</span>
+              <span class="category-hint"  id="categoryHint">Fill in recruitment date to determine category.</span>
+              <button class="btn-sm btn-ghost" style="margin-left:auto;" onclick="toggleCategoryOverride()">✏️ Override</button>
+            </div>
+            <div id="categoryOverridePanel" style="display:none;margin-top:8px;">
+              <select id="f_category_override" style="max-width:200px;" onchange="updateCategoryDisplay()">
+                <option value="">— Use auto —</option>
+                <option value="TKI">TKI</option>
+                <option value="Contractor">Contractor</option>
+              </select>
+              <div class="override-note" id="overrideNote"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- TAB 1: LEGAL -->
+      <div class="tab-panel" id="tab-1">
+        <div id="legal-app-indicators" class="legal-app-indicators" style="display:none;"></div>
+
+        <div class="modal-section-title">2.1 &nbsp;Passport</div>
+        <div class="auto-status-row"><span class="auto-status-label">Status</span><span class="legal-status-badge" id="lq_passport_badge">—</span><span class="auto-status-hint">Auto-determined</span></div>
+        <div class="modal-grid" id="passport-section">
+          <div class="form-group"><label>Passport Number</label><input type="text" id="f_passport_num" readonly class="readonly-field" placeholder="Auto-filled"/></div>
+          <div class="form-group"><label>Passport Expiry Date</label><input type="date" id="f_passport_expiry" onchange="refreshLegalStatuses()"/></div>
+        </div>
+        <div id="passport-actions" class="legal-action-row"></div>
+
+        <div class="modal-section-title">2.2 &nbsp;Labour Quota</div>
+        <div class="auto-status-row"><span class="auto-status-label">Status</span><span class="legal-status-badge" id="lq_status_badge">—</span><span class="auto-status-hint">Auto-determined</span></div>
+        <div class="modal-grid" id="quota-section">
+          <div class="form-group"><label><span class="term-tip" data-tip="Agen Pekerjaan (AP) Quota — a government-issued licence allowing a company to hire foreign workers up to a set number of slots.">AP Quota</span> Company</label><select id="f_quota_company" onchange="onQuotaCompanyChange()"><option value="">Select company…</option></select></div>
+          <div class="form-group"><label><span class="term-tip" data-tip="Kementerian Dalam Negeri (Ministry of Home Affairs) reference number issued when an AP Quota application is approved.">KDN</span> Reference Number</label><input type="text" id="f_quota_kdn"  readonly class="readonly-field" placeholder="Auto-filled"/></div>
+          <div class="form-group"><label>Slot</label><input type="text" id="f_quota_slot" readonly class="readonly-field" placeholder="Auto-assigned" onchange="refreshLegalStatuses()"/></div>
+          <div class="form-group"></div>
+        </div>
+
+        <div class="modal-section-title">2.3 &nbsp;Labour License</div>
+        <div class="auto-status-row"><span class="auto-status-label">Status</span><span class="legal-status-badge" id="ll_status_badge">—</span><span class="auto-status-hint">Auto-determined</span></div>
+        <div class="modal-grid" id="license-section">
+          <div class="form-group"><label>Registration Number</label><input type="text" id="f_license_reg"    placeholder="e.g. LIC/2024/00456" oninput="refreshLegalStatuses()"/></div>
+          <div class="form-group"><label>Expiry Date</label><input type="date" id="f_license_expiry" onchange="refreshLegalStatuses()"/></div>
+        </div>
+        <div id="license-actions" class="legal-action-row"></div>
+
+        <div class="modal-section-title">2.4 &nbsp;SOCSO</div>
+        <div class="modal-grid">
+          <div class="form-group"><label>Registration Number</label><input type="text" id="f_socso_reg" placeholder="e.g. SOCSO/00789"/></div>
+          <div class="form-group"></div>
+        </div>
+
+        <div class="modal-section-title">2.5 &nbsp;Work Permit</div>
+        <div class="auto-status-row"><span class="auto-status-label">Status</span><span class="legal-status-badge" id="wp_status_badge">—</span><span class="auto-status-hint">Auto-determined</span></div>
+        <div class="modal-grid" id="permit-section">
+          <div class="form-group"><label>Registration Number</label><input type="text" id="f_permit_reg"    placeholder="e.g. WP/2024/01234" oninput="refreshLegalStatuses(); updateCategoryDisplay()"/></div>
+          <div class="form-group"><label>Expiry Date</label><input type="date" id="f_permit_expiry" onchange="refreshLegalStatuses(); updateCategoryDisplay()"/></div>
+        </div>
+        <div id="permit-actions" class="legal-action-row"></div>
+      </div>
+
+      <!-- TAB 2: CLAIMS -->
+      <div class="tab-panel" id="tab-2">
+        <div class="modal-section-title">Claims</div>
+        <div class="claim-card eligible" id="claim1-card">
+          <div class="claim-header"><div class="claim-badge">Claim 1</div><div class="claim-title">1st Claim — RM 560.00 <span class="claim-condition">upon recruitment</span></div><div class="claim-status-badge" id="claim1-status">Eligible</div></div>
+          <div class="claim-body"><div class="claim-input-row"><div class="form-group" style="flex:1;max-width:220px;"><label>Claim Date</label><input type="date" id="f_claim1_date"/></div><button class="claim-action-btn tick" onclick="saveClaim(1)">✔</button><button class="claim-action-btn cross" onclick="removeClaim(1)" id="claim1-remove" style="display:none;">✕</button></div><div class="claim-note" id="claim1-note"></div></div>
+        </div>
+        <div class="claim-card ineligible" id="claim2-card">
+          <div class="claim-header"><div class="claim-badge">Claim 2</div><div class="claim-title">2nd Claim — RM 240.00 <span class="claim-condition">upon 3 months working</span></div><div class="claim-status-badge ineligible" id="claim2-status">Not Eligible</div></div>
+          <div class="claim-body"><div class="claim-input-row"><div class="form-group" style="flex:1;max-width:220px;"><label>Claim Date</label><input type="date" id="f_claim2_date" disabled/></div><button class="claim-action-btn tick" onclick="saveClaim(2)" disabled id="claim2-tick">✔</button><button class="claim-action-btn cross" onclick="removeClaim(2)" id="claim2-remove" style="display:none;">✕</button></div><div class="claim-note" id="claim2-note">Set a recruitment date to check eligibility.</div></div>
+        </div>
+        <div class="claim-card ineligible" id="claim3-card">
+          <div class="claim-header"><div class="claim-badge">Claim 3</div><div class="claim-title">3rd Claim — RM 700.00 <span class="claim-condition">upon work permit registration</span></div><div class="claim-status-badge ineligible" id="claim3-status">Not Eligible</div></div>
+          <div class="claim-body"><div class="claim-input-row"><div class="form-group" style="flex:1;max-width:220px;"><label>Claim Date</label><input type="date" id="f_claim3_date" disabled/></div><button class="claim-action-btn tick" onclick="saveClaim(3)" disabled id="claim3-tick">✔</button><button class="claim-action-btn cross" onclick="removeClaim(3)" id="claim3-remove" style="display:none;">✕</button></div><div class="claim-note" id="claim3-note">Work permit must be Active to be eligible.</div></div>
+        </div>
+      </div>
+
+      <div id="modalError" class="modal-error" style="display:none;"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-secondary" onclick="closeWorkerModal()">Cancel</button>
+      <div class="modal-footer-tabs">
+        <button class="btn-ghost" id="btn-prev" onclick="prevTab()" style="display:none;">← Previous</button>
+        <button class="btn-ghost" id="btn-next" onclick="nextTab()">Next →</button>
+      </div>
+      <button class="btn-primary" id="saveWorkerBtn" onclick="saveWorker()">Save Worker</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ MODAL: VIEW WORKER ═══ -->
+<div class="modal-overlay" id="viewModal" onclick="closeViewOutside(event)">
+  <div class="modal modal-view"><div class="modal-header"><h3>Worker Profile</h3><button class="modal-close" onclick="closeViewModal()">✕</button></div><div class="modal-body" id="viewModalBody"></div>
+  <div class="modal-footer">
+    <button class="btn-secondary" onclick="closeViewModal()">Close</button>
+    <button class="btn-ghost btn-sm export-btn" onclick="openExportPicker('worker_profile')">⬇ Export ▾</button>
+    <div style="display:none;">
+      </div>
+    </div>
+  </div></div>
+</div>
+
+<!-- ═══ MODAL: DELETE WORKER ═══ -->
+<div class="modal-overlay" id="deleteModal" onclick="closeDeleteOutside(event)">
+  <div class="modal modal-sm"><div class="modal-header"><h3>Delete Worker</h3><button class="modal-close" onclick="closeDeleteModal()">✕</button></div><div class="modal-body"><p class="delete-confirm-text">Are you sure you want to delete <strong id="deleteWorkerName"></strong>?</p></div><div class="modal-footer"><button class="btn-secondary" onclick="closeDeleteModal()">Cancel</button><button class="btn-danger" onclick="confirmDelete()">Yes, Delete</button></div></div>
+</div>
+
+<!-- ═══ MODAL: APPLICATION FORM ═══ -->
+<div class="modal-overlay" id="appModal" onclick="closeAppModalOutside(event)">
+  <div class="modal modal-med">
+    <div class="modal-header"><h3 id="appModalTitle">Document Application</h3><button class="modal-close" onclick="closeAppModal()">✕</button></div>
+    <div class="modal-body">
+      <div class="modal-grid">
+        <div class="form-group full-width" id="app_worker_search_row" style="display:none;position:relative;">
+          <label>Worker Name <span class="required">*</span></label>
+          <input type="text" id="app_worker_search" placeholder="Type worker name to search…" oninput="onAppWorkerSearch()" autocomplete="off"/>
+          <div id="app_worker_dropdown" class="slot-assign-menu" style="display:none;position:absolute;top:100%;left:0;right:0;z-index:900;"></div>
+        </div>
+        <div class="form-group"><label>Worker Name</label><input type="text" id="app_worker_name" readonly class="readonly-field"/></div>
+        <div class="form-group"><label>Work Location</label><input type="text" id="app_location" readonly class="readonly-field"/></div>
+        <div class="form-group"><label>Document Type</label><select id="app_doc_type" onchange="onAppDocTypeChange()"><option value="">Select document</option><option>Passport</option><option>Labour License</option><option>Work Permit</option><option>C.O.M</option></select></div>
+        <div class="form-group"><label>Application Type</label><select id="app_type" onchange="onAppTypeChange()"><option value="">Select type</option><option value="Renew">Renew</option><option value="New Application">New Application</option><option value="Data Entry">Data Entry</option></select></div>
+        <div class="form-group"><label>Application Date</label><input type="date" id="app_date" onchange="calcEstReceive()"/></div>
+        <div class="form-group"><label>Est. Duration</label><input type="text" id="app_duration" readonly class="readonly-field"/></div>
+        <div class="form-group"><label>Est. Date of Receive</label><input type="text" id="app_est_receive" readonly class="readonly-field"/></div>
+        <div class="form-group"><label>Actual Date of Receive</label><input type="date" id="app_actual_receive"/></div>
+        <div class="form-group full-width"><label>Handover to Estate Date</label><input type="date" id="app_handover"/></div>
+        <div class="form-group full-width"><label id="app_reg_label">Registration Number</label><input type="text" id="app_reg_number" placeholder="New registration number (replaces existing)"/></div>
+        <div class="form-group full-width"><label id="app_expiry_label">New Expiry Date</label><input type="date" id="app_new_expiry"/></div>
+      </div>
+      <div id="appModalError" class="modal-error" style="display:none;"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-secondary" onclick="closeAppModal()">Cancel</button>
+      <button class="btn-ghost" id="appReturnBtn" onclick="returnToWorkerModal()" style="display:none;">← Return to Worker</button>
+      <button class="btn-primary" onclick="saveApplication()">Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ MODAL: AP QUOTA — NEW ═══ -->
+<div class="modal-overlay" id="apQuotaModal" onclick="closeApQuotaModalOutside(event)">
+  <div class="modal modal-med">
+    <div class="modal-header"><h3>AP Quota Registration</h3><button class="modal-close" onclick="closeApQuotaModal()">✕</button></div>
+    <div class="modal-body">
+      <div class="modal-grid">
+        <div class="form-group full-width"><label>Registering Company <span class="required">*</span></label><select id="aq_company"><option value="">Select company…</option></select></div>
+        <div class="form-group"><label>Slots Available <span class="required">*</span></label><input type="number" id="aq_slots" placeholder="e.g. 10" min="1"/></div>
+        <div class="form-group"><label>Application Date <span class="required">*</span></label><input type="date" id="aq_app_date" onchange="calcAqEstApproval()"/></div>
+        <div class="form-group"><label>Est. Duration</label><input type="text" id="aq_est_dur_display" readonly class="readonly-field" value="60 days"/></div>
+        <div class="form-group full-width"><label>Est. Date of Approval</label><input type="text" id="aq_est_approval" readonly class="readonly-field" placeholder="Auto-calculated"/></div>
+      </div>
+      <div id="apQuotaError" class="modal-error" style="display:none;"></div>
+    </div>
+    <div class="modal-footer"><button class="btn-secondary" onclick="closeApQuotaModal()">Cancel</button><button class="btn-primary" onclick="saveApQuota()">Submit Application</button></div>
+  </div>
+</div>
+
+<!-- ═══ MODAL: AP QUOTA — UPDATE / APPROVE ═══ -->
+<div class="modal-overlay" id="apQuotaUpdateModal" onclick="closeApQuotaUpdateOutside(event)">
+  <div class="modal modal-med">
+    <div class="modal-header"><h3>Update AP Quota Application</h3><button class="modal-close" onclick="closeApQuotaUpdateModal()">✕</button></div>
+    <div class="modal-body">
+      <div class="aq-update-info" id="aqUpdateInfo"></div>
+      <div class="modal-grid" style="margin-top:16px;">
+        <div class="form-group full-width"><label>Date of Approval <span class="required">*</span></label><input type="date" id="aq_approval_date"/></div>
+        <div class="form-group"><label>KDN Reference Number <span class="required">*</span></label><input type="text" id="aq_kdn"/></div>
+        <div class="form-group"><label>Quota Expiry Date <span class="required">*</span></label><input type="date" id="aq_expiry"/></div>
+      </div>
+      <div id="apQuotaUpdateError" class="modal-error" style="display:none;"></div>
+    </div>
+    <div class="modal-footer"><button class="btn-secondary" onclick="closeApQuotaUpdateModal()">Cancel</button><button class="btn-primary" onclick="saveApQuotaUpdate()">Approve &amp; Activate</button></div>
+  </div>
+</div>
+
+<!-- ═══ MODAL: AP QUOTA — EDIT ═══ -->
+<div class="modal-overlay" id="apQuotaEditModal" onclick="closeApQuotaEditOutside(event)">
+  <div class="modal modal-med">
+    <div class="modal-header"><h3>Edit AP Quota</h3><button class="modal-close" onclick="closeApQuotaEditModal()">✕</button></div>
+    <div class="modal-body">
+      <div class="modal-grid">
+        <div class="form-group full-width"><label>Registering Company</label><input type="text" id="aqe_company" readonly class="readonly-field"/></div>
+        <div class="form-group"><label>Slots Available</label><input type="number" id="aqe_slots" min="1"/></div>
+        <div class="form-group"><label>Application Date</label><input type="date" id="aqe_app_date" readonly class="readonly-field"/></div>
+        <div class="form-group"><label>Date of Approval</label><input type="date" id="aqe_approval_date"/></div>
+        <div class="form-group"><label><span class="term-tip" data-tip="Kementerian Dalam Negeri (Ministry of Home Affairs) reference number issued when an AP Quota application is approved.">KDN</span> Reference Number</label><input type="text" id="aqe_kdn"/></div>
+        <div class="form-group"><label>Quota Expiry Date</label><input type="date" id="aqe_expiry"/></div>
+      </div>
+      <div id="apQuotaEditError" class="modal-error" style="display:none;"></div>
+    </div>
+    <div class="modal-footer"><button class="btn-secondary" onclick="closeApQuotaEditModal()">Cancel</button><button class="btn-primary" onclick="saveApQuotaEdit()">Save Changes</button></div>
+  </div>
+</div>
+
+<!-- ═══ MODAL: DELETE AP QUOTA ═══ -->
+<div class="modal-overlay" id="deleteApModal" onclick="closeDeleteApOutside(event)">
+  <div class="modal modal-sm"><div class="modal-header"><h3>Delete AP Quota</h3><button class="modal-close" onclick="closeDeleteApModal()">✕</button></div><div class="modal-body"><p class="delete-confirm-text">Delete AP Quota for <strong id="deleteApName"></strong>?</p></div><div class="modal-footer"><button class="btn-secondary" onclick="closeDeleteApModal()">Cancel</button><button class="btn-danger" onclick="confirmDeleteAp()">Yes, Delete</button></div></div>
+</div>
+
+<!-- ═══ MODAL: KDN DETAIL ═══ -->
+<div class="modal-overlay" id="kdnDetailModal" onclick="closeKdnDetailOutside(event)">
+  <div class="modal modal-med"><div class="modal-header"><h3>AP Quota Detail</h3><button class="modal-close" onclick="closeKdnDetailModal()">✕</button></div><div class="modal-body" id="kdnDetailBody"></div><div class="modal-footer"><button class="btn-secondary" onclick="closeKdnDetailModal()">Close</button></div></div>
+</div>
+
+
+<!-- ═══ MODAL: LEAVE APPLICATION ═══ -->
+<div class="modal-overlay" id="leaveModal" onclick="closeLeaveModalOutside(event)">
+  <div class="modal modal-med">
+    <div class="modal-header"><h3 id="leaveModalTitle">New Leave Application</h3><button class="modal-close" onclick="closeLeaveModal()">✕</button></div>
+    <div class="modal-body">
+      <div class="modal-grid">
+        <div class="form-group full-width"><label>Leave Application No.</label><input type="text" id="leave_app_number" readonly class="readonly-field"/></div>
+        <div class="form-group full-width" style="position:relative;">
+          <label>Worker Name <span class="required">*</span></label>
+          <input type="text" id="leave_worker_search" placeholder="Type worker name to search…" oninput="onLeaveWorkerSearch()" autocomplete="off"/>
+          <div id="leave_worker_dropdown" class="slot-assign-menu" style="display:none;position:absolute;top:100%;left:0;right:0;z-index:900;"></div>
+        </div>
+        <div class="form-group"><label>Worker ID</label><input type="text" id="leave_worker_id_display" readonly class="readonly-field"/></div>
+        <div class="form-group"><label>Work Location</label><input type="text" id="leave_location_display" readonly class="readonly-field"/></div>
+        <div class="form-group"><label>Application Date <span class="required">*</span></label><input type="date" id="leave_app_date"/></div>
+        <div class="form-group"><label>Leave Start Date <span class="required">*</span></label><input type="date" id="leave_start" onchange="calcLeaveReturn()"/></div>
+        <div class="form-group"><label>Return Date <span class="required">*</span></label><input type="date" id="leave_est_return" onchange="calcLeaveReturn()"/></div>
+        <div class="form-group"><label>Leave Duration (days)</label><input type="text" id="leave_duration" readonly class="readonly-field" placeholder="Auto-calculated"/></div>
+      </div>
+      <div id="leaveModalError" class="modal-error" style="display:none;"></div>
+    </div>
+    <div class="modal-footer"><button class="btn-secondary" onclick="closeLeaveModal()">Cancel</button><button class="btn-primary" onclick="saveLeave()">Submit</button></div>
+  </div>
+</div>
+
+<!-- ═══ MODAL: LEAVE VIEW ═══ -->
+<div class="modal-overlay" id="leaveViewModal" onclick="closeLeaveViewOutside(event)">
+  <div class="modal modal-med"><div class="modal-header"><h3>Worker Leave Record</h3><button class="modal-close" onclick="closeLeaveViewModal()">✕</button></div><div class="modal-body" id="leaveViewBody"></div><div class="modal-footer"><button class="btn-secondary" onclick="closeLeaveViewModal()">Close</button></div></div>
+</div>
+
+<!-- ═══ MODAL: DELETE LEAVE ═══ -->
+<div class="modal-overlay" id="deleteLeaveModal" onclick="closeDeleteLeaveOutside(event)">
+  <div class="modal modal-sm"><div class="modal-header"><h3>Delete Leave Application</h3><button class="modal-close" onclick="closeDeleteLeaveModal()">✕</button></div><div class="modal-body"><p class="delete-confirm-text">Delete leave application <strong id="deleteLeaveNumber"></strong>?</p></div><div class="modal-footer"><button class="btn-secondary" onclick="closeDeleteLeaveModal()">Cancel</button><button class="btn-danger" onclick="confirmDeleteLeave()">Yes, Delete</button></div></div>
+</div>
+
+<!-- ═══ MODAL: LEAVE UPDATE (status page) ═══ -->
+<div class="modal-overlay" id="leaveUpdateModal" onclick="closeLeaveUpdateOutside(event)">
+  <div class="modal modal-med">
+    <div class="modal-header"><h3>Update Leave Record</h3><button class="modal-close" onclick="closeLeaveUpdateModal()">✕</button></div>
+    <div class="modal-body">
+      <div class="aq-update-info" style="margin-bottom:16px;">
+        <strong id="leaveUpdateRef"></strong> — <span id="leaveUpdateWorker"></span><br/>
+        <span style="font-size:12.5px;color:var(--text3);">ID: <span id="leaveUpdateId"></span> &nbsp;·&nbsp; Location: <span id="leaveUpdateLoc"></span></span><br/>
+        <span style="font-size:12.5px;color:var(--text3);">Start: <span id="leaveUpdateStart"></span> &nbsp;·&nbsp; Est. Return: <span id="leaveUpdateEst"></span> &nbsp;·&nbsp; Duration: <span id="leaveUpdateDur"></span></span>
+      </div>
+      <div class="modal-grid">
+        <div class="form-group full-width"><label>Actual Return Date</label><input type="date" id="lu_actual_return"/></div>
+        <div class="form-group full-width">
+          <label style="display:flex;align-items:center;gap:10px;cursor:pointer;">
+            <input type="checkbox" id="lu_absconded" style="width:18px;height:18px;cursor:pointer;"/>
+            <span>Mark as Absconded <span class="field-note">(will set departure date and make worker Inactive)</span></span>
+          </label>
+        </div>
+      </div>
+      <div id="leaveUpdateError" class="modal-error" style="display:none;"></div>
+    </div>
+    <div class="modal-footer"><button class="btn-secondary" onclick="closeLeaveUpdateModal()">Cancel</button><button class="btn-primary" onclick="saveLeaveUpdate()">Save Update</button></div>
+  </div>
+</div>
+
+<!-- ═══ MODAL: LOCATION (add/edit) ═══ -->
+<!-- ═══ MODAL: LOCATION (add/edit) ═══ -->
+<div class="modal-overlay" id="locationModal" onclick="closeLocationModalOutside(event)">
+  <div class="modal modal-sm">
+    <div class="modal-header"><h3 id="locationModalTitle">Add Work Location</h3><button class="modal-close" onclick="closeLocationModal()">✕</button></div>
+    <div class="modal-body">
+      <div class="form-group" style="margin-bottom:12px;"><label>Location Name <span class="required">*</span></label><input type="text" id="loc_name" placeholder="e.g. Block A, Estate Miri"/></div>
+      <div class="form-group"><label>Worker ID Prefix <span class="field-note">(optional, e.g. MRI)</span></label><input type="text" id="loc_prefix" placeholder="e.g. MRI" maxlength="6" style="text-transform:uppercase;"/></div>
+      <div class="form-group"><label>ID Counter <span class="field-note">(next ID = this number + 1)</span></label><input type="number" id="loc_counter" value="0" min="0" placeholder="0"/></div>
+      <div id="locationError" class="modal-error" style="display:none;margin-top:10px;"></div>
+    </div>
+    <div class="modal-footer"><button class="btn-secondary" onclick="closeLocationModal()">Cancel</button><button class="btn-primary" onclick="saveLocation()">Save Location</button></div>
+  </div>
+</div>
+
+<!-- ═══ MODAL: DELETE LOCATION ═══ -->
+<div class="modal-overlay" id="deleteLocationModal" onclick="closeDeleteLocationOutside(event)">
+  <div class="modal modal-sm"><div class="modal-header"><h3>Delete Location</h3><button class="modal-close" onclick="closeDeleteLocationModal()">✕</button></div><div class="modal-body"><p class="delete-confirm-text">Delete location <strong id="deleteLocationName"></strong>?</p></div><div class="modal-footer"><button class="btn-secondary" onclick="closeDeleteLocationModal()">Cancel</button><button class="btn-danger" onclick="confirmDeleteLocation()">Yes, Delete</button></div></div>
+</div>
+
+<!-- Toast -->
+<!-- ═══ MODAL: AP QUOTA COMPANY ═══ -->
+<div class="modal-overlay" id="apCompanyModal" onclick="closeApCompanyModalOutside(event)">
+  <div class="modal modal-sm">
+    <div class="modal-header"><h3 id="apCompanyModalTitle">Add AP Quota Company</h3><button class="modal-close" onclick="closeApCompanyModal()">✕</button></div>
+    <div class="modal-body">
+      <div class="form-group" style="margin-bottom:12px;"><label>Company Name <span class="required">*</span></label><input type="text" id="apc_name" placeholder="e.g. Mega Jutamas Sdn Bhd"/></div>
+      <div class="form-group"><label>Registration No. <span class="field-note">(optional)</span></label><input type="text" id="apc_regno" placeholder="e.g. 202301012345"/></div>
+      <div id="apCompanyError" class="modal-error" style="display:none;margin-top:10px;"></div>
+    </div>
+    <div class="modal-footer"><button class="btn-secondary" onclick="closeApCompanyModal()">Cancel</button><button class="btn-primary" onclick="saveApCompany()">Save</button></div>
+  </div>
+</div>
+
+<!-- ═══ MODAL: DELETE AP COMPANY ═══ -->
+<div class="modal-overlay" id="deleteApCompanyModal" onclick="closeDeleteApCompanyOutside(event)">
+  <div class="modal modal-sm"><div class="modal-header"><h3>Delete Company</h3><button class="modal-close" onclick="closeDeleteApCompanyModal()">✕</button></div><div class="modal-body"><p class="delete-confirm-text">Delete company <strong id="deleteApCompanyName"></strong>?</p></div><div class="modal-footer"><button class="btn-secondary" onclick="closeDeleteApCompanyModal()">Cancel</button><button class="btn-danger" onclick="confirmDeleteApCompany()">Yes, Delete</button></div></div>
+</div>
+
+<!-- ═══ MODAL: PRICE HISTORY ═══ -->
+<div class="modal-overlay" id="priceHistoryModal" onclick="closePriceHistoryOutside(event)">
+  <div class="modal modal-med">
+    <div class="modal-header"><h3 id="priceHistoryTitle">Price History</h3><button class="modal-close" onclick="closePriceHistoryModal()">✕</button></div>
+    <div class="modal-body">
+      <div class="table-wrap"><table class="data-table" style="min-width:0;">
+        <thead><tr><th>Effective Date</th><th style="text-align:right;">Price (RM)</th><th>Actions</th></tr></thead>
+        <tbody id="price-history-body"></tbody>
+      </table></div>
+    </div>
+    <div class="modal-footer"><button class="btn-secondary" onclick="closePriceHistoryModal()">Close</button></div>
+  </div>
+</div>
+
+<!-- ═══ MODAL: CREATE USER ACCOUNT ═══ -->
+<div class="modal-overlay" id="inviteUserModal" onclick="closeInviteUserModalOutside(event)">
+  <div class="modal modal-med">
+    <div class="modal-header"><h3>Create User Account</h3><button class="modal-close" onclick="closeInviteUserModal()">✕</button></div>
+    <div class="modal-body">
+      <div class="modal-grid">
+        <div class="form-group"><label>Full Name</label><input type="text" id="invite_name" placeholder="e.g. Ahmad bin Ismail"/></div>
+        <div class="form-group"><label>Email Address <span class="required">*</span></label><input type="email" id="invite_email" placeholder="colleague@example.com"/></div>
+        <div class="form-group"><label>Temporary Password <span class="required">*</span></label><input type="password" id="invite_temp_pw" placeholder="Min 6 characters"/></div>
+        <div class="form-group"><label>Role</label>
+          <select id="invite_role">
+            <option value="viewer">Viewer — read only</option>
+            <option value="editor">Editor — can add and edit</option>
+            <option value="admin">Admin — full access</option>
+          </select>
+        </div>
+      </div>
+          <div style="margin-top:14px;">
+            <div style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:var(--text3);margin-bottom:10px;">Module Access <span style="font-size:11px;font-weight:400;font-style:italic;">(untick to hide from user)</span></div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;">
+              <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer;"><input type="checkbox" class="module-access-cb" data-page="worker-list"          checked/> Worker Profiles</label>
+              <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer;"><input type="checkbox" class="module-access-cb" data-page="worker-termination" checked/> Worker Termination</label>
+              <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer;"><input type="checkbox" class="module-access-cb" data-page="doc-status"        checked/> Document Status</label>
+              <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer;"><input type="checkbox" class="module-access-cb" data-page="doc-application"   checked/> Document Application</label>
+              <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer;"><input type="checkbox" class="module-access-cb" data-page="ap-quota"          checked/> AP Quota</label>
+              <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer;"><input type="checkbox" class="module-access-cb" data-page="leave-applications"checked/> Leave Applications</label>
+              <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer;"><input type="checkbox" class="module-access-cb" data-page="leave-status"      checked/> Leave Status</label>
+              <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer;"><input type="checkbox" class="module-access-cb" data-page="financial-report"  checked/> Financial Report</label>
+            </div>
+          </div>
+      <div id="inviteError"   class="modal-error" style="display:none;margin-top:12px;"></div>
+      <div id="inviteSuccess" class="modal-error" style="display:none;margin-top:12px;background:var(--green-light);border-color:var(--green-mid);color:var(--green);"></div>
+    </div>
+    <div class="modal-footer"><button class="btn-secondary" onclick="closeInviteUserModal()">Cancel</button><button class="btn-primary" id="invite-submit-btn" onclick="sendUserInvite()">Create Account</button></div>
+  </div>
+</div>
+
+<!-- ═══ MODAL: CHANGE ROLE & ACCESS ═══ -->
+<div class="modal-overlay" id="changeRoleModal" onclick="closeChangeRoleModalOutside(event)">
+  <div class="modal modal-med">
+    <div class="modal-header"><h3>Edit User Role &amp; Access</h3><button class="modal-close" onclick="closeChangeRoleModal()">✕</button></div>
+    <div class="modal-body">
+      <p style="font-size:13.5px;color:var(--text2);margin-bottom:16px;">Editing access for: <strong id="changeRoleEmail"></strong></p>
+      <div class="form-group"><label>Role</label>
+        <select id="change_role_select">
+          <option value="viewer">Viewer — read only</option>
+          <option value="editor">Editor — can add and edit</option>
+          <option value="admin">Admin — full access</option>
+        </select>
+      </div>
+          <div style="margin-top:14px;">
+            <div style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:var(--text3);margin-bottom:10px;">Module Access <span style="font-size:11px;font-weight:400;font-style:italic;">(untick to hide from user)</span></div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;">
+              <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer;"><input type="checkbox" class="module-access-cb-edit" data-page="worker-list"          checked/> Worker Profiles</label>
+              <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer;"><input type="checkbox" class="module-access-cb-edit" data-page="worker-termination" checked/> Worker Termination</label>
+              <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer;"><input type="checkbox" class="module-access-cb-edit" data-page="doc-status"        checked/> Document Status</label>
+              <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer;"><input type="checkbox" class="module-access-cb-edit" data-page="doc-application"   checked/> Document Application</label>
+              <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer;"><input type="checkbox" class="module-access-cb-edit" data-page="ap-quota"          checked/> AP Quota</label>
+              <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer;"><input type="checkbox" class="module-access-cb-edit" data-page="leave-applications"checked/> Leave Applications</label>
+              <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer;"><input type="checkbox" class="module-access-cb-edit" data-page="leave-status"      checked/> Leave Status</label>
+              <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer;"><input type="checkbox" class="module-access-cb-edit" data-page="financial-report"  checked/> Financial Report</label>
+            </div>
+          </div>
+      <div id="changeRoleError" class="modal-error" style="display:none;margin-top:12px;"></div>
+    </div>
+    <div class="modal-footer"><button class="btn-secondary" onclick="closeChangeRoleModal()">Cancel</button><button class="btn-primary" onclick="saveUserRole()">Save Changes</button></div>
+  </div>
+</div>
+
+<!-- ═══ MODAL: USER PROFILE ═══ -->
+<div class="modal-overlay" id="profileModal" onclick="closeProfileModalOutside(event)">
+  <div class="modal modal-med">
+    <div class="modal-header"><h3>My Profile</h3><button class="modal-close" onclick="closeProfileModal()">✕</button></div>
+    <div class="modal-body">
+      <!-- Avatar section -->
+      <div style="display:flex;align-items:center;gap:20px;padding:16px;background:var(--green-pale);border-radius:var(--radius);margin-bottom:20px;">
+        <div class="photo-circle" style="width:80px;height:80px;flex-shrink:0;" id="profile-avatar-circle">
+          <img id="profile-photo-preview" src="" alt="" style="display:none;width:100%;height:100%;object-fit:cover;border-radius:50%;"/>
+          <span id="profile-initials" style="font-size:28px;font-weight:700;color:var(--green);">?</span>
+        </div>
+        <div>
+          <div style="font-size:13.5px;font-weight:600;color:var(--text);margin-bottom:8px;">Profile Photo</div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;">
+            <label class="btn-secondary btn-sm upload-label" for="profile-photo-input" style="cursor:pointer;">📷 Choose Photo</label>
+            <input type="file" id="profile-photo-input" accept="image/*" onchange="previewProfilePhoto(event)" style="display:none;"/>
+            <button class="btn-ghost btn-sm" onclick="removeProfilePhoto()">Remove</button>
+          </div>
+          <div style="font-size:11.5px;color:var(--text3);margin-top:6px;">JPG or PNG, max 2MB</div>
+        </div>
+      </div>
+
+      <!-- Fields -->
+      <div class="modal-grid">
+        <div class="form-group full-width">
+          <label>Display Name</label>
+          <input type="text" id="profile-display-name" placeholder="Your full name e.g. Ahmad bin Ismail"/>
+        </div>
+        <div class="form-group full-width">
+          <label>Email Address</label>
+          <input type="email" id="profile-email" readonly class="readonly-field"/>
+        </div>
+        <div class="form-group full-width">
+          <label>Role</label>
+          <input type="text" id="profile-role" readonly class="readonly-field"/>
+        </div>
+      </div>
+
+      <!-- Change password section -->
+      <div style="margin-top:8px;padding-top:16px;border-top:1.5px solid var(--border);">
+        <div style="font-size:13px;font-weight:700;color:var(--text2);margin-bottom:12px;text-transform:uppercase;letter-spacing:.8px;">Change Password</div>
+        <div class="modal-grid">
+          <div class="form-group">
+            <label>New Password</label>
+            <input type="password" id="profile-new-pw" placeholder="Min 6 characters"/>
+          </div>
+          <div class="form-group">
+            <label>Confirm New Password</label>
+            <input type="password" id="profile-confirm-pw" placeholder="Repeat new password"/>
+          </div>
+        </div>
+      </div>
+
+      <div id="profileError"   class="modal-error"   style="display:none;margin-top:12px;"></div>
+      <div id="profileSuccess" class="modal-error"   style="display:none;margin-top:12px;background:var(--green-light);border-color:var(--green-mid);color:var(--green);"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-secondary" onclick="closeProfileModal()">Cancel</button>
+      <button class="btn-primary viewer-ok" onclick="saveProfile()">Save Profile</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ MODAL: EXPORT COLUMN PICKER ═══ -->
+<div class="modal-overlay" id="exportPickerModal" onclick="closeExportPickerOutside(event)">
+  <div class="modal modal-med">
+    <div class="modal-header">
+      <h3 id="exportPickerTitle">Export Options</h3>
+      <button class="modal-close" onclick="closeExportPicker()">✕</button>
+    </div>
+    <div class="modal-body">
+      <p style="font-size:13px;color:var(--text-secondary);margin-bottom:16px;">
+        Select and reorder the columns you want to include in your export. Drag to reorder.
+      </p>
+      <div style="display:grid;grid-template-columns:20px 1fr;gap:0;font-size:11px;font-weight:700;color:var(--text-tertiary);padding:5px 8px;border-bottom:1px solid var(--border-default);text-transform:uppercase;letter-spacing:.06em;font-family:var(--font-ui);">
+        <span></span><span>Column Name</span>
+      </div>
+      <div id="exportPickerCols" style="max-height:340px;overflow-y:auto;border:1px solid var(--border-default);border-top:none;border-radius:0 0 var(--r-sm) var(--r-sm);"></div>
+      <p style="font-size:11.5px;color:var(--text-tertiary);margin-top:10px;font-style:italic;" id="exportPickerNote"></p>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-secondary" onclick="closeExportPicker()">Cancel</button>
+      <div style="display:flex;gap:8px;">
+        <button class="btn-ghost" onclick="doExport('pdf')">🖨 PDF</button>
+        <button class="btn-primary" onclick="doExport('xlsx')">📊 Excel (XLSX)</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ MODAL: WORKER TERMINATION ═══ -->
+<div class="modal-overlay" id="terminationModal" onclick="closeTerminationModalOutside(event)">
+  <div class="modal modal-med">
+    <div class="modal-header">
+      <h3>Worker Termination</h3>
+      <button class="modal-close" onclick="closeTerminationModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="modal-section-title">Worker Details</div>
+      <div class="modal-grid">
+        <div class="form-group"><label>Worker Name</label><input type="text" id="term_name" readonly class="readonly-field"/></div>
+        <div class="form-group"><label>Work Location</label><input type="text" id="term_location" readonly class="readonly-field"/></div>
+        <div class="form-group"><label>AP Quota Company</label><input type="text" id="term_company" readonly class="readonly-field"/></div>
+        <div class="form-group"><label>Category</label><input type="text" id="term_category" readonly class="readonly-field"/></div>
+      </div>
+      <div class="modal-section-title">Termination Details</div>
+      <div class="modal-grid">
+        <div class="form-group"><label>Termination Notification Date <span class="required">*</span></label><input type="date" id="term_notif_date"/></div>
+        <div class="form-group"><label>Planned Departure Date <span class="required">*</span></label><input type="date" id="term_departure_date"/></div>
+        <div class="form-group full-width"><label>Reason <span class="required">*</span></label>
+          <select id="term_reason" onchange="onTermReasonChange()">
+            <option value="">— Select reason —</option>
+            <option value="hometown">Returning to Hometown</option>
+            <option value="absconded">Absconded</option>
+          </select>
+        </div>
+      </div>
+      <div id="term_absconded_warning" style="display:none;margin-top:10px;padding:12px 16px;background:rgba(160,82,45,.1);border:1.5px solid rgba(160,82,45,.4);border-radius:var(--r-md);font-size:13.5px;color:var(--accent-clay);line-height:1.7;">
+        ⚠️ Marking as <strong>Absconded</strong> will set the worker's departure date to today and permanently mark them as absconded.
+      </div>
+      <div id="terminationError" class="modal-error" style="display:none;margin-top:12px;"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-secondary" onclick="closeTerminationModal()">Cancel</button>
+      <button class="btn-danger" onclick="saveTermination()">Confirm Termination</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<!-- ═══ SCRIPTS — load order matters ═══ -->
+<script src="js/theme.js"></script>
+<script src="js/auth.js"></script>
+<script src="js/utils.js"></script>
+<script src="js/data.js"></script>
+<script src="js/navigation.js"></script>
+<script src="js/legal.js"></script>
+<script src="js/claims.js"></script>
+<script src="js/workers.js"></script>
+<script src="js/documents.js"></script>
+<script src="js/apquota.js"></script>
+<script src="js/financial.js"></script>
+<script src="js/leave.js"></script>
+<script src="js/settings.js"></script>
+<script src="js/report.js"></script>
+
+<!-- ═══ INIT ═══ -->
+<script>
+  document.addEventListener('DOMContentLoaded', async () => {
+    updateDate();
+    updateGreeting();
+    restoreSidebarState();
+    const authenticated = await initAuth();
+    if (authenticated) {
+      hideAuthScreen();     // make app-root visible first
+      applyRoleUI();        // set up nav
+      await loadData();     // fetch from Supabase
+      populateLeaveFilters();
+      navigateTo('dashboard');
+    } else {
+      showAuthScreen('login');
+    }
+  });
+
+  function closeSidebarDrawer() {
+    document.getElementById('sidebar').classList.remove('open');
+    const overlay = document.getElementById('sidebarOverlay');
+    if (overlay) overlay.style.display = 'none';
+  }
+  // Show overlay when sidebar opens on phone
+  const origToggle = window.toggleSidebar;
+  window.toggleSidebar = function() {
+    const sb = document.getElementById('sidebar');
+    sb.classList.toggle('open');
+    const overlay = document.getElementById('sidebarOverlay');
+    if (overlay) overlay.style.display = sb.classList.contains('open') ? 'block' : 'none';
+  };
+
+  document.addEventListener('click', e => {
+    const dd  = document.getElementById('profile-dropdown');
+    const btn = document.getElementById('topbar-profile-btn');
+    if (dd && dd.style.display !== 'none' && !btn?.contains(e.target) && !dd.contains(e.target)) {
+      dd.style.display = 'none';
+    }
+  });
+
+  document.addEventListener('keydown', e => {
+    if (e.key !== 'Escape') return;
+    // Pop the topmost modal from the stack
+    const top = _modalStack[_modalStack.length - 1];
+    if (top) closeModal(top);
+    else closeSlotMenu();
+  });
+</script>
+
+</div><!-- /app-root -->
+</body>
+</html>
