@@ -3,8 +3,8 @@
 // ============================================================
 
 const AUTH_URL  = 'https://xbyowjlrkfrvgaypucck.supabase.co/auth/v1';
-const MGMT_URL  = 'https://xbyowjlrkfrvgaypucck.supabase.co';
-const SUPA_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhieW93amxya2ZydmdheXB1Y2NrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk0MTgwNzYsImV4cCI6MjA5NDk5NDA3Nn0.XdGf4T5st6fCGnnLs5cI0JMct2FuKDPYMztbWjgArEg';
+const MGMT_URL      = 'https://xbyowjlrkfrvgaypucck.supabase.co';
+const SUPA_ANON     = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhieW93amxya2ZydmdheXB1Y2NrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk0MTgwNzYsImV4cCI6MjA5NDk5NDA3Nn0.XdGf4T5st6fCGnnLs5cI0JMct2FuKDPYMztbWjgArEg';
 
 // ── STATE ──────────────────────────────────────────────────────
 let _session    = null;
@@ -637,25 +637,23 @@ async function unblockUser(userId) {
 
 async function deleteUserRole(userId) {
   try {
-    // Set role to 'pending' — the role watchdog on their device checks every 30s
-    // and forces logout when it detects pending role
-    const res = await fetch(`${MGMT_URL}/rest/v1/user_roles?user_id=eq.${encodeURIComponent(userId)}`, {
-      method: 'PATCH',
+    const res = await fetch(`${MGMT_URL}/functions/v1/delete-user`, {
+      method: 'POST',
       headers: {
-        'apikey': SUPA_ANON,
-        'Authorization': 'Bearer ' + (window._authToken || SUPA_ANON),
         'Content-Type': 'application/json',
-        'Prefer': 'return=minimal'
+        'Authorization': 'Bearer ' + (window._authToken || SUPA_ANON),
+        'apikey': SUPA_ANON,
       },
-      body: JSON.stringify({ role: 'pending', last_seen: null })
+      body: JSON.stringify({ userId })
     });
-    if (res.ok) {
-      showToast('User deactivated — their session will be terminated within 30 seconds.');
+
+    const data = await res.json();
+
+    if (res.ok && data.success) {
+      showToast('User permanently deleted — their access is revoked immediately.');
       loadAllUsers();
     } else {
-      const errText = await res.text();
-      console.error('Deactivate error:', errText);
-      showToast('Failed to deactivate: ' + errText.slice(0,120), true);
+      showToast('Failed to delete user: ' + (data.error || 'Unknown error'), true);
     }
   } catch(e) {
     showToast('Error: ' + e.message, true);
