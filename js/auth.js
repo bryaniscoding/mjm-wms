@@ -503,18 +503,35 @@ let _changingUserId = null;
 const SUPA_SERVICE_ROLE_NOTE = ''; // service role key needed for listing users
 
 async function loadAllUsers() {
-  // Clear search filters so all users show by default
   const searchEl = document.getElementById('userMgmtSearch');
   const roleEl   = document.getElementById('userRoleFilter');
   if (searchEl) searchEl.value = '';
   if (roleEl)   roleEl.value   = '';
 
   try {
-    const res = await fetch(`${MGMT_URL}/rest/v1/user_roles?select=user_id,role,email,created_at,module_access&order=created_at.desc`, {
-      headers: { 'apikey': SUPA_ANON, 'Authorization': 'Bearer ' + (window._authToken || SUPA_ANON) }
+    // Use edge function — reads from auth.users (authoritative) + user_roles (roles)
+    // Also auto-cleans orphaned user_roles rows
+    const res = await fetch(`${MGMT_URL}/functions/v1/list-users`, {
+      headers: {
+        'apikey': SUPA_ANON,
+        'Authorization': 'Bearer ' + (window._authToken || SUPA_ANON)
+      }
     });
-    if (res.ok) { _allUsers = await res.json(); }
-    else _allUsers = [];
+    if (res.ok) {
+      _allUsers = await res.json();
+      // Sort: pending first, then by created_at desc
+      _allUsers.sort((a,b) => {
+        if (a.role==='pending' && b.role!=='pending') return -1;
+        if (b.role==='pending' && a.role!=='pending') return 1;
+        return new Date(b.created_at) - new Date(a.created_at);
+      });
+    } else {
+      // Fallback to user_roles table if edge function not deployed yet
+      const fallback = await fetch(`${MGMT_URL}/rest/v1/user_roles?select=user_id,role,email,created_at,module_access&order=created_at.desc`, {
+        headers: { 'apikey': SUPA_ANON, 'Authorization': 'Bearer ' + (window._authToken || SUPA_ANON) }
+      });
+      _allUsers = fallback.ok ? await fallback.json() : [];
+    }
   } catch(e) { _allUsers = []; }
   renderUserMgmtTable();
   renderNewRegistrationsTable();
