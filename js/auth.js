@@ -522,7 +522,7 @@ function renderUserMgmtTable() {
   const tbody  = document.getElementById('user-mgmt-table-body');
   if (!tbody) return;
 
-  let rows = _allUsers;
+  let rows = _allUsers.filter(u => !!u.email); // skip orphaned rows (deleted from auth but row remains)
   if (query) rows = rows.filter(u => (u.email||'').toLowerCase().includes(query));
   if (roleF) rows = rows.filter(u => u.role === roleF);
 
