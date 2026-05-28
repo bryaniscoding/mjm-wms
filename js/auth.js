@@ -117,55 +117,61 @@ async function loadUserRole() {
     } catch(e) { /* ignore */ }
   }
 
-  // Then fetch fresh from Supabase and update
+  // Always use the session access token for this fetch — _authToken may not be set yet
+  const token = _session?.access_token || window._authToken || SUPA_ANON;
+
   try {
     const res = await fetch(`${MGMT_URL}/rest/v1/user_roles?user_id=eq.${uid}&select=role,display_name,avatar_url,module_access`, {
-      headers: { 'apikey': SUPA_ANON, 'Authorization': 'Bearer ' + (window._authToken || SUPA_ANON) }
+      headers: { 'apikey': SUPA_ANON, 'Authorization': 'Bearer ' + token }
     });
-    if (res.ok) {
-      const data = await res.json();
-      const roleFromDB = data[0]?.role || null;
 
-      // No record = pending verification
-      if (!data.length || !roleFromDB) {
-        await authLogout();
-        alert('⏳ Your account is pending admin verification.\n\nAn admin needs to approve your account before you can access the system. Please contact your administrator.');
-        return;
-      }
-
-      // Blocked users cannot access
-      if (roleFromDB === 'blocked' || roleFromDB === 'inactive') {
-        await authLogout();
-        alert('🚫 Your account has been deactivated.\n\nPlease contact your administrator.');
-        return;
-      }
-
-      // Pending verification
-      if (roleFromDB === 'pending') {
-        await authLogout();
-        alert('⏳ Your account is awaiting admin approval.\n\nAn admin needs to verify your account first. Please contact your administrator.');
-        return;
-      }
-
-      _userRole     = roleFromDB;
-      _displayName  = data[0]?.display_name  || '';
-      _avatarUrl    = data[0]?.avatar_url    || '';
-      _moduleAccess = data[0]?.module_access || [];
-      // Cache for next reload
-      // Never cache pending/blocked/inactive roles
-      if (!['pending','blocked','inactive'].includes(_userRole)) {
-        localStorage.setItem('mjm_user_profile', JSON.stringify({
-          uid, role: _userRole, displayName: _displayName,
-          avatarUrl: _avatarUrl, moduleAccess: _moduleAccess,
-        }));
-      }
-    } else {
-      // Can't reach user_roles — treat as pending
-      await authLogout();
-      alert('⏳ Your account is pending admin verification. Please contact your administrator.');
+    if (!res.ok) {
+      // Network/server error — do NOT log out, just keep going with no role restriction
+      // This prevents admin being logged out due to a temporary network issue
+      console.warn('loadUserRole: fetch failed with', res.status, '— keeping session');
       return;
     }
-  } catch(e) { /* keep cached values if network fails */ }
+
+    const data = await res.json();
+    const roleFromDB = data[0]?.role || null;
+
+    // No record at all = new user pending approval
+    if (!data.length || !roleFromDB) {
+      await authLogout();
+      alert('⏳ Your account is pending admin verification.\n\nAn admin needs to approve your account before you can access the system. Please contact your administrator.');
+      return;
+    }
+
+    // Inactive/blocked — deny access
+    if (roleFromDB === 'blocked' || roleFromDB === 'inactive') {
+      await authLogout();
+      alert('🚫 Your account has been deactivated.\n\nPlease contact your administrator.');
+      return;
+    }
+
+    // Pending — awaiting approval
+    if (roleFromDB === 'pending') {
+      await authLogout();
+      alert('⏳ Your account is awaiting admin approval.\n\nAn admin needs to verify your account first. Please contact your administrator.');
+      return;
+    }
+
+    // Valid active role — set everything
+    _userRole     = roleFromDB;
+    _displayName  = data[0]?.display_name || '';
+    _avatarUrl    = data[0]?.avatar_url   || '';
+    _moduleAccess = data[0]?.module_access || [];
+
+    // Cache display info (never cache restricted roles)
+    localStorage.setItem('mjm_user_profile', JSON.stringify({
+      uid, role: _userRole, displayName: _displayName,
+      avatarUrl: _avatarUrl, moduleAccess: _moduleAccess,
+    }));
+
+  } catch(e) {
+    // Network error — do NOT log out, session stays valid
+    console.warn('loadUserRole: network error —', e.message);
+  }
 }
 
 // ── LOGIN ──────────────────────────────────────────────────────
