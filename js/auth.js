@@ -868,13 +868,8 @@ async function initPresence() {
 
   async function heartbeat() {
     try {
-      // First ensure the row exists
-      await fetch(`${MGMT_URL}/rest/v1/user_roles`, {
-        method: 'POST',
-        headers: { 'apikey': SUPA_ANON, 'Authorization': 'Bearer ' + (window._authToken || SUPA_ANON), 'Content-Type': 'application/json', 'Prefer': 'return=minimal,resolution=merge-duplicates' },
-        body: JSON.stringify({ user_id: user.id, email: _userEmail, role: _userRole || 'viewer', last_seen: new Date().toISOString() })
-      });
-      // Then update last_seen
+      // PATCH only — never POST/upsert which could overwrite role
+      // Only update last_seen and display info, never role
       await fetch(`${MGMT_URL}/rest/v1/user_roles?user_id=eq.${encodeURIComponent(user.id)}`, {
         method: 'PATCH',
         headers: { 'apikey': SUPA_ANON, 'Authorization': 'Bearer ' + (window._authToken || SUPA_ANON), 'Content-Type': 'application/json', 'Prefer': 'return=minimal' },
