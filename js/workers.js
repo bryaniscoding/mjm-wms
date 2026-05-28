@@ -194,6 +194,7 @@ function openAddWorkerModal() {
   // Show direct entry note for new workers
   const note = document.getElementById('legal-direct-entry-note');
   if (note) note.style.display = 'block';
+  clearAttachmentPreviews();
   // Reset passport num auto-fill tracking
   const pn = document.getElementById('f_passport_num');
   if (pn) { pn.value = ''; pn.dataset.autoFilled = 'false'; }
@@ -318,6 +319,7 @@ function populateForm(w) {
 
   // Legal
   setField('f_passport_num',    l.passport?.number || g.passport);
+  loadAttachmentPreviews(w);
   setField('f_passport_expiry', l.passport?.expiry);
   populateQuotaCompanyDropdown();
   const qcSel = document.getElementById('f_quota_company');
@@ -983,4 +985,57 @@ function renderTerminationTable() {
   }).join('');
 
   if (countEl) countEl.textContent = `${list.length} worker${list.length!==1?'s':''}`;
+}
+
+// ══════════════════════════════════════════════════════════════
+//  DOCUMENT ATTACHMENTS
+// ══════════════════════════════════════════════════════════════
+
+// Store attachment base64 data during editing session
+let _attachments = { passport: null, license: null, permit: null };
+
+function previewAttachment(type, input) {
+  const file = input.files[0]; if (!file) return;
+  if (file.size > 5 * 1024 * 1024) {
+    showToast('File too large — max 5MB.', true); input.value = ''; return;
+  }
+  const reader = new FileReader();
+  reader.onload = e => {
+    _attachments[type] = { data: e.target.result, name: file.name, mime: file.type };
+    const nameEl = document.getElementById(`f_${type}_attachment_name`);
+    const linkEl = document.getElementById(`f_${type}_attachment_link`);
+    if (nameEl) nameEl.textContent = file.name;
+    if (linkEl) { linkEl.href = e.target.result; linkEl.style.display = 'inline'; }
+  };
+  reader.readAsDataURL(file);
+}
+
+function loadAttachmentPreviews(w) {
+  _attachments = { passport: null, license: null, permit: null };
+  ['passport','license','permit'].forEach(type => {
+    const stored = w.legal?.[type]?.attachment;
+    const nameEl = document.getElementById(`f_${type}_attachment_name`);
+    const linkEl = document.getElementById(`f_${type}_attachment_link`);
+    const inputEl = document.getElementById(`f_${type}_attachment`);
+    if (inputEl) inputEl.value = '';
+    if (stored) {
+      if (nameEl) nameEl.textContent = stored.name || 'View document';
+      if (linkEl) { linkEl.href = stored.data; linkEl.style.display = 'inline'; }
+    } else {
+      if (nameEl) nameEl.textContent = '';
+      if (linkEl) linkEl.style.display = 'none';
+    }
+  });
+}
+
+function clearAttachmentPreviews() {
+  _attachments = { passport: null, license: null, permit: null };
+  ['passport','license','permit'].forEach(type => {
+    const nameEl = document.getElementById(`f_${type}_attachment_name`);
+    const linkEl = document.getElementById(`f_${type}_attachment_link`);
+    const inputEl = document.getElementById(`f_${type}_attachment`);
+    if (inputEl) inputEl.value = '';
+    if (nameEl)  nameEl.textContent = '';
+    if (linkEl)  linkEl.style.display = 'none';
+  });
 }

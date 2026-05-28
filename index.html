@@ -74,6 +74,13 @@
     <div class="topbar-breadcrumb" id="breadcrumb">Dashboard</div>
     <div class="topbar-right">
       <div class="topbar-date" id="topbar-date"></div>
+      <div id="presence-box" style="display:flex;align-items:center;gap:6px;padding:5px 10px;background:var(--bg-surface);border:1px solid var(--border-default);border-radius:var(--r-xl);cursor:default;" title="Currently active users">
+        <div style="width:8px;height:8px;border-radius:50%;background:#22c55e;animation:pulse-green 2s infinite;flex-shrink:0;"></div>
+        <div id="presence-list" style="display:flex;align-items:center;gap:4px;font-size:12px;color:var(--text-secondary);font-family:var(--font-ui);">
+          <span id="presence-count">1</span> online
+        </div>
+        <div id="presence-avatars" style="display:flex;align-items:center;"></div>
+      </div>
       <div class="topbar-profile" id="topbar-profile-btn" onclick="toggleProfileDropdown()" title="Your profile">
         <div class="topbar-avatar" id="topbar-avatar">?</div>
         <span class="topbar-username" id="topbar-username">Loading…</span>
@@ -195,7 +202,7 @@
       <div><h2>Worker Profiles</h2><p class="page-sub">All information there are, at the tip of your fingers.</p></div>
       <div style="display:flex;gap:8px;">
         <div style="position:relative;display:inline-block;" id="export-workers-wrap">
-<button class="btn-ghost btn-sm export-btn" onclick="openExportPicker('workers')">⬇ Export ▾</button>
+
         </div>
         <button class="btn-primary" onclick="openAddWorkerModal()">+ Add Worker</button>
       </div>
@@ -264,7 +271,7 @@
     <div class="page-header">
       <div><h2>Document Status</h2><p class="page-sub">Track all critical worker documents with recorded expiry dates.</p></div>
       <div style="position:relative;" id="export-docs-wrap">
-<button class="btn-ghost btn-sm export-btn" onclick="openExportPicker('doc_status')">⬇ Export ▾</button>
+
       </div>
     </div>
     <div class="filter-bar">
@@ -341,7 +348,7 @@
       <div><h2>AP Quota Overview</h2><p class="page-sub">Manage all registered AP Quota entries and assigned workers.</p></div>
       <div style="display:flex;gap:8px;">
         <div style="position:relative;" id="export-aq-wrap">
-<button class="btn-ghost btn-sm export-btn" onclick="openExportPicker('ap_quota')">⬇ Export ▾</button>
+
         </div>
         <button class="btn-primary" onclick="openApQuotaModal()">+ Add New AP Quota</button>
       </div>
@@ -374,7 +381,7 @@
   <div class="page" id="page-financial-report">
     <div class="page-header">
       <div><h2>Financial Report</h2><p class="page-sub">Track all document application costs and generate custom reports.</p></div>
-      <button class="btn-danger btn-sm admin-only" onclick="cleanOrphanedFinancials()" title="Remove financial records with no matching application">🧹 Clean Orphaned Records</button>
+      
     </div>
     <div class="filter-bar">
       <div class="search-wrap"><input class="search-input" type="text" id="finSearch" placeholder="Search by worker, document type, location…"/><span class="search-icon-right">🔍</span></div>
@@ -387,7 +394,7 @@
       </div>
       <button class="btn-primary btn-sm search-btn" onclick="filterFinancial()">Search</button>
       <button class="btn-ghost btn-sm search-btn" onclick="clearFinFilters()">Clear</button>
-      <button class="btn-ghost btn-sm export-btn" onclick="openExportPicker('financial')" style="margin-left:8px;">⬇ Export ▾</button>
+      
     </div>
     <div class="fin-summary" id="fin-summary"></div>
     <div class="table-wrap" style="margin-top:16px;">
@@ -428,11 +435,7 @@
         <div class="settings-card-body"><div class="settings-card-title">AP Quota Companies</div><div class="settings-card-sub">Manage available companies for AP Quota applications.</div></div>
         <button class="btn-ghost btn-sm">Adjust Settings →</button>
       </div>
-      <div class="settings-card" onclick="navigateTo('settings-templates')">
-        <div class="settings-card-icon">📋</div>
-        <div class="settings-card-body"><div class="settings-card-title">Report Templates</div><div class="settings-card-sub">Configure PDF and Excel export layout, columns, branding for each report.</div></div>
-        <button class="btn-ghost btn-sm">Adjust Settings →</button>
-      </div>
+
     </div>
   </div>
 
@@ -511,7 +514,7 @@
     <div class="page-header">
       <div><h2>Workers Leave Status</h2><p class="page-sub">Monitor workers currently on leave, returning soon, or absconded.</p></div>
       <div style="position:relative;" id="export-leave-wrap">
-<button class="btn-ghost btn-sm export-btn" onclick="openExportPicker('leave_status')">⬇ Export ▾</button>
+
       </div>
     </div>
     <div class="filter-bar">
@@ -555,7 +558,7 @@
     </div>
     <div class="filter-bar">
       <div class="search-wrap"><input class="search-input" type="text" id="userMgmtSearch" placeholder="Search by email…"/><span class="search-icon-right">🔍</span></div>
-      <select class="filter-select" id="userRoleFilter"><option value="">All Roles</option><option value="admin">Admin</option><option value="editor">Editor</option><option value="viewer">Viewer</option></select>
+      <select class="filter-select" id="userRoleFilter"><option value="">All Roles</option><option value="pending">⏳ Pending</option><option value="admin">Admin</option><option value="editor">Editor</option><option value="viewer">Viewer</option><option value="blocked">🚫 Blocked</option></select>
       <button class="btn-primary btn-sm search-btn" onclick="filterUsers()">Search</button>
       <button class="btn-ghost btn-sm search-btn" onclick="clearUserFilters()">Clear</button>
     </div>
@@ -589,22 +592,6 @@
         </div>
       </div>
     </div>
-  </div>
-
-  <!-- SETTINGS: Report Templates -->
-  <div class="page" id="page-settings-templates">
-    <div class="page-header">
-      <div><h2>Report Templates</h2><p class="page-sub">Configure PDF and Excel export layout per report type. Admin only.</p></div>
-      <button class="btn-ghost btn-sm" onclick="navigateTo('settings')">← Back</button>
-    </div>
-    <div class="settings-overview-grid" id="report-template-list">
-      <div style="color:var(--text3);font-style:italic;padding:20px;">Loading templates…</div>
-    </div>
-  </div>
-
-  <!-- REPORT BUILDER (full page) -->
-  <div class="page" id="page-report-builder" style="padding:0;">
-    <div id="report-builder-content" style="height:100%;"></div>
   </div>
 
   <!-- COMING SOON (fallback) -->
@@ -691,6 +678,15 @@
         <div class="modal-grid" id="passport-section">
           <div class="form-group"><label>Passport Number</label><input type="text" id="f_passport_num" placeholder="e.g. A12345678" oninput="refreshLegalStatuses()"/></div>
           <div class="form-group"><label>Passport Expiry Date</label><input type="date" id="f_passport_expiry" onchange="refreshLegalStatuses()"/></div>
+          <div class="form-group full-width">
+            <label>Passport Document <span class="field-note">(PDF or image)</span></label>
+            <div class="attachment-row">
+              <input type="file" id="f_passport_attachment" accept=".pdf,.jpg,.jpeg,.png" style="display:none;" onchange="previewAttachment('passport',this)"/>
+              <label for="f_passport_attachment" class="btn-secondary btn-sm upload-label" style="cursor:pointer;">📎 Upload Document</label>
+              <span id="f_passport_attachment_name" style="font-size:12.5px;color:var(--text-secondary);margin-left:8px;"></span>
+              <a id="f_passport_attachment_link" href="#" target="_blank" style="display:none;font-size:12.5px;color:var(--accent-primary);margin-left:8px;">View →</a>
+            </div>
+          </div>
         </div>
         <div id="passport-actions" class="legal-action-row"></div>
 
@@ -708,6 +704,15 @@
         <div class="modal-grid" id="license-section">
           <div class="form-group"><label>Registration Number</label><input type="text" id="f_license_reg"    placeholder="e.g. LIC/2024/00456" oninput="refreshLegalStatuses()"/></div>
           <div class="form-group"><label>Expiry Date</label><input type="date" id="f_license_expiry" onchange="refreshLegalStatuses()"/></div>
+          <div class="form-group full-width">
+            <label>License Document <span class="field-note">(PDF or image)</span></label>
+            <div class="attachment-row">
+              <input type="file" id="f_license_attachment" accept=".pdf,.jpg,.jpeg,.png" style="display:none;" onchange="previewAttachment('license',this)"/>
+              <label for="f_license_attachment" class="btn-secondary btn-sm upload-label" style="cursor:pointer;">📎 Upload Document</label>
+              <span id="f_license_attachment_name" style="font-size:12.5px;color:var(--text-secondary);margin-left:8px;"></span>
+              <a id="f_license_attachment_link" href="#" target="_blank" style="display:none;font-size:12.5px;color:var(--accent-primary);margin-left:8px;">View →</a>
+            </div>
+          </div>
         </div>
         <div id="license-actions" class="legal-action-row"></div>
 
@@ -722,6 +727,15 @@
         <div class="modal-grid" id="permit-section">
           <div class="form-group"><label>Registration Number</label><input type="text" id="f_permit_reg"    placeholder="e.g. WP/2024/01234" oninput="refreshLegalStatuses(); updateCategoryDisplay()"/></div>
           <div class="form-group"><label>Expiry Date</label><input type="date" id="f_permit_expiry" onchange="refreshLegalStatuses(); updateCategoryDisplay()"/></div>
+          <div class="form-group full-width">
+            <label>Work Permit Document <span class="field-note">(PDF or image)</span></label>
+            <div class="attachment-row">
+              <input type="file" id="f_permit_attachment" accept=".pdf,.jpg,.jpeg,.png" style="display:none;" onchange="previewAttachment('permit',this)"/>
+              <label for="f_permit_attachment" class="btn-secondary btn-sm upload-label" style="cursor:pointer;">📎 Upload Document</label>
+              <span id="f_permit_attachment_name" style="font-size:12.5px;color:var(--text-secondary);margin-left:8px;"></span>
+              <a id="f_permit_attachment_link" href="#" target="_blank" style="display:none;font-size:12.5px;color:var(--accent-primary);margin-left:8px;">View →</a>
+            </div>
+          </div>
         </div>
         <div id="permit-actions" class="legal-action-row"></div>
       </div>
@@ -761,7 +775,7 @@
   <div class="modal modal-view"><div class="modal-header"><h3>Worker Profile</h3><button class="modal-close" onclick="closeViewModal()">✕</button></div><div class="modal-body" id="viewModalBody"></div>
   <div class="modal-footer">
     <button class="btn-secondary" onclick="closeViewModal()">Close</button>
-    <button class="btn-ghost btn-sm export-btn" onclick="openExportPicker('worker_profile')">⬇ Export ▾</button>
+    
     <div style="display:none;">
       </div>
     </div>
@@ -1116,33 +1130,6 @@
   </div>
 </div>
 
-<!-- ═══ MODAL: EXPORT COLUMN PICKER ═══ -->
-<div class="modal-overlay" id="exportPickerModal" onclick="closeExportPickerOutside(event)">
-  <div class="modal modal-med">
-    <div class="modal-header">
-      <h3 id="exportPickerTitle">Export Options</h3>
-      <button class="modal-close" onclick="closeExportPicker()">✕</button>
-    </div>
-    <div class="modal-body">
-      <p style="font-size:13px;color:var(--text-secondary);margin-bottom:16px;">
-        Select and reorder the columns you want to include in your export. Drag to reorder.
-      </p>
-      <div style="display:grid;grid-template-columns:20px 1fr;gap:0;font-size:11px;font-weight:700;color:var(--text-tertiary);padding:5px 8px;border-bottom:1px solid var(--border-default);text-transform:uppercase;letter-spacing:.06em;font-family:var(--font-ui);">
-        <span></span><span>Column Name</span>
-      </div>
-      <div id="exportPickerCols" style="max-height:340px;overflow-y:auto;border:1px solid var(--border-default);border-top:none;border-radius:0 0 var(--r-sm) var(--r-sm);"></div>
-      <p style="font-size:11.5px;color:var(--text-tertiary);margin-top:10px;font-style:italic;" id="exportPickerNote"></p>
-    </div>
-    <div class="modal-footer">
-      <button class="btn-secondary" onclick="closeExportPicker()">Cancel</button>
-      <div style="display:flex;gap:8px;">
-        <button class="btn-ghost" onclick="doExport('pdf')">🖨 PDF</button>
-        <button class="btn-primary" onclick="doExport('xlsx')">📊 Excel (XLSX)</button>
-      </div>
-    </div>
-  </div>
-</div>
-
 <!-- ═══ MODAL: WORKER TERMINATION ═══ -->
 <div class="modal-overlay" id="terminationModal" onclick="closeTerminationModalOutside(event)">
   <div class="modal modal-med">
@@ -1198,7 +1185,6 @@
 <script src="js/financial.js"></script>
 <script src="js/leave.js"></script>
 <script src="js/settings.js"></script>
-<script src="js/report.js"></script>
 
 <!-- ═══ INIT ═══ -->
 <script>

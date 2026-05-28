@@ -82,7 +82,7 @@ async function _ensureUserRoleRecord(uid, email) {
         'Content-Type': 'application/json',
         'Prefer': 'return=minimal,resolution=ignore-duplicates'
       },
-      body: JSON.stringify({ user_id: uid, email, role: 'viewer' })
+      body: JSON.stringify({ user_id: uid, email, role: 'pending' })
     });
   } catch(e) { /* non-critical */ }
 }
@@ -121,7 +121,30 @@ async function loadUserRole() {
     });
     if (res.ok) {
       const data = await res.json();
-      _userRole     = data[0]?.role          || 'viewer';
+      const roleFromDB = data[0]?.role || null;
+
+      // No record = pending verification
+      if (!data.length || !roleFromDB) {
+        await authLogout();
+        alert('⏳ Your account is pending admin verification.\n\nAn admin needs to approve your account before you can access the system. Please contact your administrator.');
+        return;
+      }
+
+      // Blocked users cannot access
+      if (roleFromDB === 'blocked') {
+        await authLogout();
+        alert('🚫 Your account has been deactivated.\n\nPlease contact your administrator.');
+        return;
+      }
+
+      // Pending verification
+      if (roleFromDB === 'pending') {
+        await authLogout();
+        alert('⏳ Your account is awaiting admin approval.\n\nAn admin needs to verify your account first. Please contact your administrator.');
+        return;
+      }
+
+      _userRole     = roleFromDB;
       _displayName  = data[0]?.display_name  || '';
       _avatarUrl    = data[0]?.avatar_url    || '';
       _moduleAccess = data[0]?.module_access || [];
@@ -130,6 +153,11 @@ async function loadUserRole() {
         uid, role: _userRole, displayName: _displayName,
         avatarUrl: _avatarUrl, moduleAccess: _moduleAccess,
       }));
+    } else {
+      // Can't reach user_roles — treat as pending
+      await authLogout();
+      alert('⏳ Your account is pending admin verification. Please contact your administrator.');
+      return;
     }
   } catch(e) { /* keep cached values if network fails */ }
 }
@@ -302,6 +330,7 @@ async function doLogin() {
     await loadData();
     populateLeaveFilters();
     navigateTo('dashboard');
+    initPresence();
   } catch(e) {
     setAuthError(e.message);
     if (btn) { btn.textContent = 'Sign In'; btn.disabled = false; }
@@ -474,18 +503,21 @@ function renderUserMgmtTable() {
   if (query) rows = rows.filter(u => (u.email||'').toLowerCase().includes(query));
   if (roleF) rows = rows.filter(u => u.role === roleF);
 
-  const roleColor = { admin:'var(--red)', editor:'var(--amber)', viewer:'var(--blue)' };
-  const roleBg    = { admin:'var(--exp-danger-bg)', editor:'var(--amber-bg)', viewer:'var(--blue-bg)' };
+  const roleColor = { admin:'var(--accent-clay)', editor:'var(--accent-primary)', viewer:'var(--accent-sage)', pending:'#888', blocked:'#c00' };
+  const roleBg    = { admin:'rgba(160,82,45,.1)', editor:'rgba(139,105,20,.1)', viewer:'rgba(92,122,92,.1)', pending:'rgba(150,150,150,.1)', blocked:'rgba(200,0,0,.1)' };
 
   if (!rows.length) {
     tbody.innerHTML = `<tr><td colspan="5"><div class="empty-state"><div class="empty-icon">👥</div><p>No users found.</p></div></td></tr>`;
     document.getElementById('user-mgmt-count').textContent = ''; return;
   }
   tbody.innerHTML = rows.map(u => {
-    const isPending = (u.user_id || '').startsWith('pending_');
+    const isPending = u.role === 'pending';
+    const isBlocked = u.role === 'blocked';
     const statusBadge = isPending
-      ? `<span class="legal-status-badge ls-expiring">Pending</span>`
-      : `<span class="legal-status-badge ls-active">Active</span>`;
+      ? `<span class="legal-status-badge" style="background:rgba(150,150,150,.12);color:#888;">⏳ Pending Approval</span>`
+      : isBlocked
+        ? `<span class="legal-status-badge ls-expired">🚫 Blocked</span>`
+        : `<span class="legal-status-badge ls-active">✓ Active</span>`;
     return `<tr>
       <td>${esc(u.email || '—')}</td>
       <td><span style="display:inline-block;padding:3px 12px;border-radius:20px;font-size:12px;font-weight:700;background:${roleBg[u.role]||'var(--offwhite2)'};color:${roleColor[u.role]||'var(--text3)'};">${esc(u.role||'viewer')}</span></td>
@@ -557,27 +589,44 @@ async function sendUserInvite() {
 
 // ── DELETE USER FROM user_roles ──────────────────────────────
 let _deletingUserId = null;
-function confirmDeleteUser(userId, email) {
+function confirmDeleteUser(userId, email, currentRole) {
   _deletingUserId = userId;
-  if (confirm(`Remove ${email} from the system? They will no longer be able to log in and their role record will be deleted.`)) {
-    deleteUserRole(userId);
+  if (currentRole === 'blocked') {
+    if (confirm(`Unblock ${email}?\n\nThis will restore their access as a Viewer.`)) {
+      unblockUser(userId);
+    }
+  } else {
+    if (confirm(`Block ${email}?\n\nThey will immediately lose access to the system. You can unblock them later.`)) {
+      deleteUserRole(userId);
+    }
   }
+}
+
+async function unblockUser(userId) {
+  try {
+    const res = await fetch(`${MGMT_URL}/rest/v1/user_roles?user_id=eq.${encodeURIComponent(userId)}`, {
+      method: 'PATCH',
+      headers: { 'apikey': SUPA_ANON, 'Authorization': 'Bearer ' + (window._authToken || SUPA_ANON), 'Content-Type': 'application/json', 'Prefer': 'return=minimal' },
+      body: JSON.stringify({ role: 'viewer' })
+    });
+    if (res.ok) { showToast('User unblocked — restored as Viewer.'); loadAllUsers(); }
+    else showToast('Failed to unblock user.', true);
+  } catch(e) { showToast('Error: ' + e.message, true); }
 }
 
 async function deleteUserRole(userId) {
   try {
+    // Mark as 'blocked' so they cannot log in — actual auth deletion needs service role key
     const res = await fetch(`${MGMT_URL}/rest/v1/user_roles?user_id=eq.${encodeURIComponent(userId)}`, {
-      method: 'DELETE',
-      headers: {
-        'apikey': SUPA_ANON,
-        'Authorization': 'Bearer ' + (window._authToken || SUPA_ANON)
-      }
+      method: 'PATCH',
+      headers: { 'apikey': SUPA_ANON, 'Authorization': 'Bearer ' + (window._authToken || SUPA_ANON), 'Content-Type': 'application/json', 'Prefer': 'return=minimal' },
+      body: JSON.stringify({ role: 'blocked' })
     });
     if (res.ok) {
-      showToast('User removed.');
+      showToast('User blocked — they can no longer access the system.');
       loadAllUsers();
     } else {
-      showToast('Failed to remove user.', true);
+      showToast('Failed to block user.', true);
     }
   } catch(e) {
     showToast('Error: ' + e.message, true);
@@ -759,4 +808,67 @@ async function saveProfile() {
   } catch(e) {
     errEl.textContent = e.message; errEl.style.display = 'block';
   }
+}
+
+// ══════════════════════════════════════════════════════════════
+//  REALTIME PRESENCE — who's online right now
+// ══════════════════════════════════════════════════════════════
+let _presenceChannel = null;
+
+function initPresence() {
+  const user = currentUser(); if (!user) return;
+  const displayName = _displayName || _userEmail.split('@')[0] || 'User';
+  const initials    = displayName.trim().split(/\s+/).map(w=>w[0]).join('').toUpperCase().slice(0,2) || '?';
+
+  // Use Supabase Realtime via REST broadcast
+  // Simpler approach: poll user_roles for last_seen timestamp
+  // Update our own last_seen every 30 seconds
+  async function heartbeat() {
+    try {
+      await fetch(`${MGMT_URL}/rest/v1/user_roles?user_id=eq.${user.id}`, {
+        method: 'PATCH',
+        headers: { 'apikey': SUPA_ANON, 'Authorization': 'Bearer ' + (window._authToken || SUPA_ANON), 'Content-Type': 'application/json', 'Prefer': 'return=minimal' },
+        body: JSON.stringify({ last_seen: new Date().toISOString(), display_name: displayName || null })
+      });
+    } catch(e) { /* ignore */ }
+  }
+
+  async function fetchActiveUsers() {
+    try {
+      const cutoff = new Date(Date.now() - 2 * 60 * 1000).toISOString(); // last 2 minutes
+      const res = await fetch(`${MGMT_URL}/rest/v1/user_roles?last_seen=gte.${cutoff}&select=user_id,display_name,role,avatar_url`, {
+        headers: { 'apikey': SUPA_ANON, 'Authorization': 'Bearer ' + (window._authToken || SUPA_ANON) }
+      });
+      if (!res.ok) return;
+      const users = await res.json();
+      renderPresenceBox(users);
+    } catch(e) { /* ignore */ }
+  }
+
+  // Immediate heartbeat + fetch
+  heartbeat(); fetchActiveUsers();
+
+  // Repeat every 30 seconds
+  if (window._presenceInterval) clearInterval(window._presenceInterval);
+  window._presenceInterval = setInterval(() => { heartbeat(); fetchActiveUsers(); }, 30000);
+}
+
+function renderPresenceBox(users) {
+  const countEl   = document.getElementById('presence-count');
+  const avatarsEl = document.getElementById('presence-avatars');
+  if (!countEl || !avatarsEl) return;
+
+  const count = users.length;
+  countEl.textContent = count;
+
+  // Show up to 4 avatar chips
+  avatarsEl.innerHTML = users.slice(0,4).map(u => {
+    const name     = u.display_name || u.email || '?';
+    const initials = name.trim().split(/\s+/).map(w=>w[0]).join('').toUpperCase().slice(0,2);
+    const colours  = { admin:'#8B6914', editor:'#5C7A5C', viewer:'#7A6652' };
+    const bg       = colours[u.role] || '#7A6652';
+    return u.avatar_url
+      ? `<img src="${u.avatar_url}" title="${esc(name)}" style="width:22px;height:22px;border-radius:50%;object-fit:cover;border:2px solid var(--bg-elevated);margin-left:-4px;" />`
+      : `<div title="${esc(name)}" style="width:22px;height:22px;border-radius:50%;background:${bg};color:#fff;font-size:9px;font-weight:700;display:flex;align-items:center;justify-content:center;border:2px solid var(--bg-elevated);margin-left:-4px;font-family:var(--font-ui);">${initials}</div>`;
+  }).join('');
 }

@@ -16,8 +16,6 @@ const PAGE_MAP = {
   'settings-locations': 'page-settings-locations',
   'settings-prices':    'page-settings-prices',
   'settings-companies':  'page-settings-companies',
-  'settings-templates':  'page-settings-templates',
-  'report-builder':      'page-report-builder',
   'user-management':     'page-user-management',
 };
 
@@ -62,8 +60,7 @@ function navigateTo(page) {
   if (page === 'settings-locations') renderLocationTable();
   if (page === 'settings-prices')    renderPriceGrid();
   if (page === 'settings-companies') renderApCompanyTable();
-  if (page === 'settings-templates') { loadReportTemplates().then(renderReportTemplateList); }
-  if (page === 'report-builder')     { /* rendered by openReportBuilder */ }
+
   if (page === 'user-management')    loadAllUsers();
 }
 
