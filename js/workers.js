@@ -988,16 +988,16 @@ function renderTerminationTable() {
 }
 
 // ══════════════════════════════════════════════════════════════
-//  DOCUMENT ATTACHMENTS
+//  DOCUMENT ATTACHMENTS — with full history
 // ══════════════════════════════════════════════════════════════
 
-// Store attachment base64 data during editing session
 let _attachments = { passport: null, license: null, permit: null };
+let _currentWorkerForAttachments = null;
 
 function previewAttachment(type, input) {
   const file = input.files[0]; if (!file) return;
   if (file.size > 5 * 1024 * 1024) {
-    showToast('File too large — max 5MB.', true); input.value = ''; return;
+    showToast('File too large — max 5MB per document.', true); input.value = ''; return;
   }
   const reader = new FileReader();
   reader.onload = e => {
@@ -1006,36 +1006,130 @@ function previewAttachment(type, input) {
     const linkEl = document.getElementById(`f_${type}_attachment_link`);
     if (nameEl) nameEl.textContent = file.name;
     if (linkEl) { linkEl.href = e.target.result; linkEl.style.display = 'inline'; }
+    updateAttachmentHistoryPreview(type);
   };
   reader.readAsDataURL(file);
 }
 
 function loadAttachmentPreviews(w) {
+  _currentWorkerForAttachments = w;
   _attachments = { passport: null, license: null, permit: null };
   ['passport','license','permit'].forEach(type => {
-    const stored = w.legal?.[type]?.attachment;
-    const nameEl = document.getElementById(`f_${type}_attachment_name`);
-    const linkEl = document.getElementById(`f_${type}_attachment_link`);
+    const history = w.legal?.[type]?.attachments || [];
+    const latest  = history[0];
+    const nameEl  = document.getElementById(`f_${type}_attachment_name`);
+    const linkEl  = document.getElementById(`f_${type}_attachment_link`);
     const inputEl = document.getElementById(`f_${type}_attachment`);
     if (inputEl) inputEl.value = '';
-    if (stored) {
-      if (nameEl) nameEl.textContent = stored.name || 'View document';
-      if (linkEl) { linkEl.href = stored.data; linkEl.style.display = 'inline'; }
+    if (latest) {
+      if (nameEl) nameEl.textContent = latest.name || 'Existing document';
+      if (linkEl) { linkEl.href = latest.data; linkEl.style.display = 'inline'; }
     } else {
       if (nameEl) nameEl.textContent = '';
       if (linkEl) linkEl.style.display = 'none';
     }
+    updateAttachmentHistoryPreview(type, history);
   });
 }
 
 function clearAttachmentPreviews() {
+  _currentWorkerForAttachments = null;
   _attachments = { passport: null, license: null, permit: null };
   ['passport','license','permit'].forEach(type => {
-    const nameEl = document.getElementById(`f_${type}_attachment_name`);
-    const linkEl = document.getElementById(`f_${type}_attachment_link`);
+    const nameEl  = document.getElementById(`f_${type}_attachment_name`);
+    const linkEl  = document.getElementById(`f_${type}_attachment_link`);
     const inputEl = document.getElementById(`f_${type}_attachment`);
     if (inputEl) inputEl.value = '';
     if (nameEl)  nameEl.textContent = '';
     if (linkEl)  linkEl.style.display = 'none';
+    updateAttachmentHistoryPreview(type, []);
   });
+}
+
+function updateAttachmentHistoryPreview(type, history) {
+  const el = document.getElementById(`f_${type}_attachment_history`);
+  if (!el) return;
+  // Combine saved history with pending new upload
+  const list = history || (_currentWorkerForAttachments?.legal?.[type]?.attachments || []);
+  const pending = _attachments[type];
+  const display = pending
+    ? [{ ...pending, date: new Date().toISOString(), id: '__pending__', reg: '', expiry: '', isNew: true }, ...list]
+    : list;
+  if (!display.length) { el.style.display = 'none'; return; }
+  el.style.display = 'block';
+  el.innerHTML = `
+    <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:var(--text-tertiary);margin-bottom:8px;">📁 Document History</div>
+    ${display.map((a,i) => `
+      <div style="display:flex;align-items:center;gap:10px;padding:8px 10px;background:var(--bg-surface);border:1px solid var(--border-default);border-radius:var(--r-sm);margin-bottom:6px;">
+        <span style="font-size:16px;">${a.mime === 'application/pdf' ? '📄' : '🖼️'}</span>
+        <div style="flex:1;min-width:0;">
+          <div style="font-size:12.5px;font-weight:600;color:var(--text-primary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${esc(a.name||'Document')} ${a.isNew ? '<span style="background:rgba(92,122,92,.15);color:var(--accent-sage);font-size:10px;padding:1px 7px;border-radius:20px;margin-left:4px;">New</span>' : ''}</div>
+          <div style="font-size:11px;color:var(--text-tertiary);">${a.date ? new Date(a.date).toLocaleDateString('en-MY') : ''} ${a.reg ? '· Reg: '+esc(a.reg) : ''} ${a.expiry ? '· Exp: '+formatDate(a.expiry) : ''}</div>
+        </div>
+        <a href="${a.data}" download="${esc(a.name||'document')}" title="Download" style="color:var(--accent-primary);font-size:14px;text-decoration:none;">⬇️</a>
+        <a href="${a.data}" target="_blank" title="View" style="color:var(--accent-primary);font-size:14px;text-decoration:none;">👁️</a>
+        ${isAdmin() && !a.isNew ? `<button onclick="deleteAttachment('${type}',${i})" title="Delete" style="background:none;border:none;cursor:pointer;color:var(--accent-clay);font-size:14px;padding:0;">🗑️</button>` : ''}
+      </div>`).join('')}`;
+}
+
+async function deleteAttachment(type, index) {
+  if (!_currentWorkerForAttachments) return;
+  if (!confirm('Delete this document? This cannot be undone.')) return;
+  const w = _currentWorkerForAttachments;
+  if (!w.legal?.[type]?.attachments) return;
+  w.legal[type].attachments.splice(index, 1);
+  await saveWorkerToDB(w);
+  loadAttachmentPreviews(w);
+  showToast('Document deleted.');
+}
+
+function openAttachmentsModal(workerId) {
+  const w = workers.find(x => x.id === workerId); if (!w) return;
+  const modal = document.getElementById('attachmentsModal');
+  const body  = document.getElementById('attachmentsModalBody');
+  if (!modal || !body) return;
+  const g = w.general || {};
+  document.getElementById('attachmentsModalTitle').textContent = `Documents — ${g.name || 'Worker'}`;
+
+  const types = [
+    { key: 'passport', label: 'Passport' },
+    { key: 'license',  label: 'Labour License' },
+    { key: 'permit',   label: 'Work Permit' },
+  ];
+
+  body.innerHTML = types.map(t => {
+    const history = w.legal?.[t.key]?.attachments || [];
+    if (!history.length) return `
+      <div style="margin-bottom:20px;">
+        <div style="font-size:13px;font-weight:700;color:var(--text-primary);margin-bottom:8px;padding-bottom:6px;border-bottom:1px solid var(--border-default);">${t.label}</div>
+        <div style="font-size:13px;color:var(--text-tertiary);font-style:italic;">No documents uploaded.</div>
+      </div>`;
+    return `
+      <div style="margin-bottom:20px;">
+        <div style="font-size:13px;font-weight:700;color:var(--text-primary);margin-bottom:8px;padding-bottom:6px;border-bottom:1px solid var(--border-default);">${t.label} <span style="font-size:11px;font-weight:400;color:var(--text-tertiary);">(${history.length} document${history.length!==1?'s':''})</span></div>
+        ${history.map((a,i) => `
+          <div style="display:flex;align-items:center;gap:12px;padding:10px 14px;background:var(--bg-surface);border:1px solid var(--border-default);border-radius:var(--r-md);margin-bottom:8px;">
+            <span style="font-size:20px;">${a.mime==='application/pdf'?'📄':'🖼️'}</span>
+            <div style="flex:1;min-width:0;">
+              <div style="font-size:13px;font-weight:600;color:var(--text-primary);">${esc(a.name||'Document')}</div>
+              <div style="font-size:11.5px;color:var(--text-tertiary);">${a.date?new Date(a.date).toLocaleDateString('en-MY',{day:'2-digit',month:'short',year:'numeric'}):''} ${a.reg?'· Reg: '+esc(a.reg):''} ${a.expiry?'· Exp: '+formatDate(a.expiry):''}</div>
+            </div>
+            <a href="${a.data}" target="_blank" class="btn-ghost btn-sm" style="text-decoration:none;">👁️ View</a>
+            <a href="${a.data}" download="${esc(a.name||'document')}" class="btn-secondary btn-sm" style="text-decoration:none;">⬇️</a>
+            ${isAdmin()?`<button onclick="deleteAttachmentFromModal('${w.id}','${t.key}',${i})" class="btn-danger btn-sm">🗑️</button>`:''}
+          </div>`).join('')}
+      </div>`;
+  }).join('');
+
+  openModal('attachmentsModal');
+}
+
+async function deleteAttachmentFromModal(workerId, type, index) {
+  if (!confirm('Delete this document? This cannot be undone.')) return;
+  const w = workers.find(x => x.id === workerId); if (!w) return;
+  if (!w.legal?.[type]?.attachments) return;
+  w.legal[type].attachments.splice(index, 1);
+  await saveWorkerToDB(w);
+  openAttachmentsModal(workerId); // refresh modal
+  showToast('Document deleted.');
 }

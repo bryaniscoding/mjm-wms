@@ -685,6 +685,7 @@
               <a id="f_passport_attachment_link" href="#" target="_blank" style="display:none;font-size:12.5px;color:var(--accent-primary);margin-left:8px;">View →</a>
             </div>
           </div>
+          <div id="f_passport_attachment_history" style="display:none;margin-top:10px;"></div>
         </div>
         <div id="passport-actions" class="legal-action-row"></div>
 
@@ -711,6 +712,7 @@
               <a id="f_license_attachment_link" href="#" target="_blank" style="display:none;font-size:12.5px;color:var(--accent-primary);margin-left:8px;">View →</a>
             </div>
           </div>
+          <div id="f_license_attachment_history" style="display:none;margin-top:10px;"></div>
         </div>
         <div id="license-actions" class="legal-action-row"></div>
 
@@ -734,6 +736,7 @@
               <a id="f_permit_attachment_link" href="#" target="_blank" style="display:none;font-size:12.5px;color:var(--accent-primary);margin-left:8px;">View →</a>
             </div>
           </div>
+          <div id="f_permit_attachment_history" style="display:none;margin-top:10px;"></div>
         </div>
         <div id="permit-actions" class="legal-action-row"></div>
       </div>
@@ -1163,6 +1166,21 @@
     <div class="modal-footer">
       <button class="btn-secondary" onclick="closeTerminationModal()">Cancel</button>
       <button class="btn-danger" onclick="saveTermination()">Confirm Termination</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ MODAL: DOCUMENT ATTACHMENTS ═══ -->
+<div class="modal-overlay" id="attachmentsModal" onclick="if(event.target===this)closeModal('attachmentsModal')">
+  <div class="modal modal-med" style="max-height:85vh;">
+    <div class="modal-header">
+      <h3 id="attachmentsModalTitle">Documents</h3>
+      <button class="modal-close" onclick="closeModal('attachmentsModal')">✕</button>
+    </div>
+    <div class="modal-body" id="attachmentsModalBody">
+    </div>
+    <div class="modal-footer">
+      <button class="btn-secondary" onclick="closeModal('attachmentsModal')">Close</button>
     </div>
   </div>
 </div>

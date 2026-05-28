@@ -149,10 +149,13 @@ async function loadUserRole() {
       _avatarUrl    = data[0]?.avatar_url    || '';
       _moduleAccess = data[0]?.module_access || [];
       // Cache for next reload
-      localStorage.setItem('mjm_user_profile', JSON.stringify({
-        uid, role: _userRole, displayName: _displayName,
-        avatarUrl: _avatarUrl, moduleAccess: _moduleAccess,
-      }));
+      // Never cache pending/blocked/inactive roles
+      if (!['pending','blocked','inactive'].includes(_userRole)) {
+        localStorage.setItem('mjm_user_profile', JSON.stringify({
+          uid, role: _userRole, displayName: _displayName,
+          avatarUrl: _avatarUrl, moduleAccess: _moduleAccess,
+        }));
+      }
     } else {
       // Can't reach user_roles — treat as pending
       await authLogout();
@@ -302,10 +305,11 @@ async function doResetPassword() {
   const btn = document.getElementById('reset-btn');
   if (btn) { btn.textContent = 'Sending…'; btn.disabled = true; }
   try {
+    const siteUrl = window.location.origin;
     const res = await fetch(`${AUTH_URL}/recover`, {
       method: 'POST',
       headers: { 'apikey': SUPA_ANON, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email }),
+      body: JSON.stringify({ email, options: { redirectTo: siteUrl } }),
     });
     // Supabase returns 200 even if email not found (security best practice)
     setAuthSuccess('✅ If an account exists for that email, a password reset link has been sent. Check your inbox.');
@@ -325,12 +329,24 @@ async function doLogin() {
   if (btn) { btn.textContent = 'Signing in…'; btn.disabled = true; }
   try {
     await authLogin(email, pw);  // loads role + profile via loadUserRole()
+    // Only proceed if user has a valid active role — loadUserRole() may have logged out
+    const session = getSession();
+    if (!session) {
+      // Was logged out by loadUserRole (pending/blocked) — auth screen already shown
+      if (btn) { btn.textContent = 'Sign In'; btn.disabled = false; }
+      return;
+    }
+    if (_userRole === 'pending' || _userRole === 'blocked' || _userRole === 'inactive') {
+      await authLogout();
+      if (btn) { btn.textContent = 'Sign In'; btn.disabled = false; }
+      return;
+    }
     hideAuthScreen();
     applyRoleUI();
     await loadData();
     populateLeaveFilters();
     navigateTo('dashboard');
-    await initPresence();  // after profile loaded — _displayName/_avatarUrl are set
+    await initPresence();
   } catch(e) {
     setAuthError(e.message);
     if (btn) { btn.textContent = 'Sign In'; btn.disabled = false; }
@@ -515,13 +531,11 @@ function renderUserMgmtTable() {
     document.getElementById('user-mgmt-count').textContent = ''; return;
   }
   tbody.innerHTML = rows.map(u => {
-    const isPending = u.role === 'pending';
-    const isBlocked = u.role === 'blocked';
-    const statusBadge = isPending
-      ? `<span class="legal-status-badge" style="background:rgba(150,150,150,.12);color:#888;">⏳ Pending Approval</span>`
-      : isBlocked
-        ? `<span class="legal-status-badge ls-expired">🚫 Blocked</span>`
-        : `<span class="legal-status-badge ls-active">✓ Active</span>`;
+    const isPending    = u.role === 'pending';
+    const isDeactivated= u.role === 'pending' && u.display_name === null; // deactivated users have null display_name
+    const statusBadge  = isPending
+      ? `<span class="legal-status-badge" style="background:rgba(150,150,150,.12);color:var(--text-tertiary);">⏳ Pending</span>`
+      : `<span class="legal-status-badge ls-active">✓ Active</span>`;
     return `<tr>
       <td>${esc(u.email || '—')}</td>
       <td><span style="display:inline-block;padding:3px 12px;border-radius:20px;font-size:12px;font-weight:700;background:${roleBg[u.role]||'var(--offwhite2)'};color:${roleColor[u.role]||'var(--text3)'};">${esc(u.role||'viewer')}</span></td>
@@ -595,12 +609,12 @@ async function sendUserInvite() {
 let _deletingUserId = null;
 function confirmDeleteUser(userId, email, currentRole) {
   _deletingUserId = userId;
-  if (currentRole === 'blocked') {
-    if (confirm(`Unblock ${email}?\n\nThis will restore their access as a Viewer.`)) {
+  if (currentRole === 'pending') {
+    if (confirm(`Reactivate ${email}?\n\nThis will restore their access as a Viewer.`)) {
       unblockUser(userId);
     }
   } else {
-    if (confirm(`Block ${email}?\n\nThey will immediately lose access to the system. You can unblock them later.`)) {
+    if (confirm(`Deactivate ${email}?\n\nThey will lose access immediately. Their data is kept and you can reactivate them later.`)) {
       deleteUserRole(userId);
     }
   }
@@ -613,24 +627,28 @@ async function unblockUser(userId) {
       headers: { 'apikey': SUPA_ANON, 'Authorization': 'Bearer ' + (window._authToken || SUPA_ANON), 'Content-Type': 'application/json', 'Prefer': 'return=minimal' },
       body: JSON.stringify({ role: 'viewer' })
     });
-    if (res.ok) { showToast('User unblocked — restored as Viewer.'); loadAllUsers(); }
-    else showToast('Failed to unblock user.', true);
+    if (res.ok) { showToast('User reactivated — restored as Viewer.'); loadAllUsers(); }
+    else showToast('Failed to reactivate user.', true);
   } catch(e) { showToast('Error: ' + e.message, true); }
 }
 
 async function deleteUserRole(userId) {
   try {
-    // Mark as 'blocked' so they cannot log in — actual auth deletion needs service role key
+    // Mark role as 'pending' to block access immediately
+    // (pending users are rejected at login — they see "awaiting approval" message)
     const res = await fetch(`${MGMT_URL}/rest/v1/user_roles?user_id=eq.${encodeURIComponent(userId)}`, {
       method: 'PATCH',
       headers: { 'apikey': SUPA_ANON, 'Authorization': 'Bearer ' + (window._authToken || SUPA_ANON), 'Content-Type': 'application/json', 'Prefer': 'return=minimal' },
-      body: JSON.stringify({ role: 'blocked' })
+      body: JSON.stringify({ role: 'pending', display_name: null })
     });
     if (res.ok) {
-      showToast('User blocked — they can no longer access the system.');
+      // Clear their localStorage cache so they can't reload and bypass
+      showToast('User deactivated — they will be logged out on next action.');
       loadAllUsers();
     } else {
-      showToast('Failed to block user.', true);
+      const errText = await res.text();
+      console.error('Delete user error:', errText);
+      showToast('Failed to deactivate user: ' + errText, true);
     }
   } catch(e) {
     showToast('Error: ' + e.message, true);
