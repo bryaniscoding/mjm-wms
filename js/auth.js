@@ -858,12 +858,24 @@ async function initPresence() {
   await heartbeat();
   await fetchActiveUsers();
 
-  // Poll every 20 seconds (faster so second user shows up quickly)
+  // Poll every 5 seconds — fast enough to feel live
   if (window._presenceInterval) clearInterval(window._presenceInterval);
   window._presenceInterval = setInterval(async () => {
     await heartbeat();
     await fetchActiveUsers();
-  }, 20000);
+  }, 5000);
+
+  // Also refresh instantly when tab regains focus
+  if (!window._presenceFocusListener) {
+    window._presenceFocusListener = async () => {
+      await heartbeat();
+      await fetchActiveUsers();
+    };
+    document.addEventListener('visibilitychange', async () => {
+      if (!document.hidden) await window._presenceFocusListener();
+    });
+    window.addEventListener('focus', window._presenceFocusListener);
+  }
 }
 
 function renderPresenceBox(users) {
