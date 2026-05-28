@@ -134,7 +134,7 @@ async function loadUserRole() {
       }
 
       // Blocked users cannot access
-      if (roleFromDB === 'blocked') {
+      if (roleFromDB === 'blocked' || roleFromDB === 'inactive') {
         await authLogout();
         alert('🚫 Your account has been deactivated.\n\nPlease contact your administrator.');
         return;
@@ -524,7 +524,7 @@ function renderUserMgmtTable() {
   const tbody  = document.getElementById('user-mgmt-table-body');
   if (!tbody) return;
 
-  let rows = _allUsers.filter(u => !!u.email && u.role !== 'pending'); // skip orphaned + pending (handled in new-registrations page)
+  let rows = _allUsers.filter(u => !!u.email && u.role !== 'pending'); // pending handled in new-registrations page
   if (query) rows = rows.filter(u => (u.email||'').toLowerCase().includes(query));
   if (roleF) rows = rows.filter(u => u.role === roleF);
 
@@ -536,10 +536,9 @@ function renderUserMgmtTable() {
     document.getElementById('user-mgmt-count').textContent = ''; return;
   }
   tbody.innerHTML = rows.map(u => {
-    const isPending    = u.role === 'pending';
-    const isDeactivated= u.role === 'pending' && u.display_name === null; // deactivated users have null display_name
-    const statusBadge  = isPending
-      ? `<span class="legal-status-badge" style="background:rgba(150,150,150,.12);color:var(--text-tertiary);">⏳ Pending</span>`
+    const isInactive   = u.role === 'inactive';
+    const statusBadge  = isInactive
+      ? `<span class="legal-status-badge" style="background:rgba(160,82,45,.1);color:var(--accent-clay);">🚫 Inactive</span>`
       : `<span class="legal-status-badge ls-active">✓ Active</span>`;
     return `<tr>
       <td>${esc(u.email || '—')}</td>
@@ -925,7 +924,7 @@ async function initPresence() {
       const data = await res.json();
       const role = data[0]?.role;
       // No record OR pending = deleted/deactivated
-      if (!data.length || !role || role === 'pending') {
+      if (!data.length || !role || role === 'pending' || role === 'inactive') {
         clearInterval(window._roleWatchdog);
         clearInterval(window._presenceInterval);
         localStorage.removeItem('mjm_user_profile');
@@ -1064,3 +1063,30 @@ function renderNewRegBanner() {
 
 window.renderNewRegBanner = renderNewRegBanner;
 window.renderNewRegistrationsTable = renderNewRegistrationsTable;
+
+// ── DEACTIVATE / REACTIVATE USER ─────────────────────────────
+async function deactivateUser(userId, email) {
+  if (!confirm(`Deactivate ${email}?\n\nThey will lose access immediately but their account is kept. You can reactivate them later.`)) return;
+  try {
+    const res = await fetch(`${MGMT_URL}/rest/v1/user_roles?user_id=eq.${encodeURIComponent(userId)}`, {
+      method: 'PATCH',
+      headers: { 'apikey': SUPA_ANON, 'Authorization': 'Bearer ' + (window._authToken || SUPA_ANON), 'Content-Type': 'application/json', 'Prefer': 'return=minimal' },
+      body: JSON.stringify({ role: 'inactive' })
+    });
+    if (res.ok) { showToast(`${email} deactivated.`); loadAllUsers(); }
+    else        { showToast('Failed to deactivate user.', true); }
+  } catch(e) { showToast('Error: ' + e.message, true); }
+}
+
+async function reactivateUser(userId, email) {
+  if (!confirm(`Reactivate ${email}?\n\nThis will restore their access as a Viewer.`)) return;
+  try {
+    const res = await fetch(`${MGMT_URL}/rest/v1/user_roles?user_id=eq.${encodeURIComponent(userId)}`, {
+      method: 'PATCH',
+      headers: { 'apikey': SUPA_ANON, 'Authorization': 'Bearer ' + (window._authToken || SUPA_ANON), 'Content-Type': 'application/json', 'Prefer': 'return=minimal' },
+      body: JSON.stringify({ role: 'viewer' })
+    });
+    if (res.ok) { showToast(`${email} reactivated as Viewer.`); loadAllUsers(); }
+    else        { showToast('Failed to reactivate user.', true); }
+  } catch(e) { showToast('Error: ' + e.message, true); }
+}
