@@ -815,60 +815,85 @@ async function saveProfile() {
 // ══════════════════════════════════════════════════════════════
 let _presenceChannel = null;
 
-function initPresence() {
+async function initPresence() {
   const user = currentUser(); if (!user) return;
   const displayName = _displayName || _userEmail.split('@')[0] || 'User';
-  const initials    = displayName.trim().split(/\s+/).map(w=>w[0]).join('').toUpperCase().slice(0,2) || '?';
 
-  // Use Supabase Realtime via REST broadcast
-  // Simpler approach: poll user_roles for last_seen timestamp
-  // Update our own last_seen every 30 seconds
   async function heartbeat() {
     try {
-      await fetch(`${MGMT_URL}/rest/v1/user_roles?user_id=eq.${user.id}`, {
+      // First ensure the row exists
+      await fetch(`${MGMT_URL}/rest/v1/user_roles`, {
+        method: 'POST',
+        headers: { 'apikey': SUPA_ANON, 'Authorization': 'Bearer ' + (window._authToken || SUPA_ANON), 'Content-Type': 'application/json', 'Prefer': 'return=minimal,resolution=merge-duplicates' },
+        body: JSON.stringify({ user_id: user.id, email: _userEmail, role: _userRole || 'viewer', last_seen: new Date().toISOString() })
+      });
+      // Then update last_seen
+      await fetch(`${MGMT_URL}/rest/v1/user_roles?user_id=eq.${encodeURIComponent(user.id)}`, {
         method: 'PATCH',
         headers: { 'apikey': SUPA_ANON, 'Authorization': 'Bearer ' + (window._authToken || SUPA_ANON), 'Content-Type': 'application/json', 'Prefer': 'return=minimal' },
-        body: JSON.stringify({ last_seen: new Date().toISOString(), display_name: displayName || null })
+        body: JSON.stringify({ last_seen: new Date().toISOString() })
       });
     } catch(e) { /* ignore */ }
   }
 
   async function fetchActiveUsers() {
     try {
-      const cutoff = new Date(Date.now() - 2 * 60 * 1000).toISOString(); // last 2 minutes
-      const res = await fetch(`${MGMT_URL}/rest/v1/user_roles?last_seen=gte.${cutoff}&select=user_id,display_name,role,avatar_url`, {
-        headers: { 'apikey': SUPA_ANON, 'Authorization': 'Bearer ' + (window._authToken || SUPA_ANON) }
-      });
-      if (!res.ok) return;
+      // Active = last seen within last 3 minutes
+      const cutoff = new Date(Date.now() - 3 * 60 * 1000).toISOString();
+      const res = await fetch(
+        `${MGMT_URL}/rest/v1/user_roles?last_seen=gte.${encodeURIComponent(cutoff)}&role=neq.blocked&role=neq.pending&select=user_id,display_name,role,avatar_url,email`,
+        { headers: { 'apikey': SUPA_ANON, 'Authorization': 'Bearer ' + (window._authToken || SUPA_ANON) } }
+      );
+      if (!res.ok) { console.warn('Presence fetch failed:', res.status); return; }
       const users = await res.json();
+      // Always include current user even if last_seen not updated yet
+      const myId  = user.id;
+      const hasSelf = users.some(u => u.user_id === myId);
+      if (!hasSelf) users.unshift({ user_id: myId, display_name: displayName, role: _userRole, avatar_url: _avatarUrl });
       renderPresenceBox(users);
-    } catch(e) { /* ignore */ }
+    } catch(e) { console.warn('Presence error:', e); }
   }
 
-  // Immediate heartbeat + fetch
-  heartbeat(); fetchActiveUsers();
+  // Run immediately
+  await heartbeat();
+  await fetchActiveUsers();
 
-  // Repeat every 30 seconds
+  // Poll every 20 seconds (faster so second user shows up quickly)
   if (window._presenceInterval) clearInterval(window._presenceInterval);
-  window._presenceInterval = setInterval(() => { heartbeat(); fetchActiveUsers(); }, 30000);
+  window._presenceInterval = setInterval(async () => {
+    await heartbeat();
+    await fetchActiveUsers();
+  }, 20000);
 }
 
 function renderPresenceBox(users) {
   const countEl   = document.getElementById('presence-count');
   const avatarsEl = document.getElementById('presence-avatars');
+  const boxEl     = document.getElementById('presence-box');
   if (!countEl || !avatarsEl) return;
 
   const count = users.length;
-  countEl.textContent = count;
+  // Update count text
+  countEl.textContent = `${count} online`;
 
-  // Show up to 4 avatar chips
-  avatarsEl.innerHTML = users.slice(0,4).map(u => {
+  // Build avatar chips — show up to 5, overlap them Google-Docs style
+  const colours = { admin:'#8B6914', editor:'#5C7A5C', viewer:'#9A8778' };
+  avatarsEl.style.cssText = 'display:flex;align-items:center;margin-left:6px;';
+  avatarsEl.innerHTML = users.slice(0,5).map((u, i) => {
     const name     = u.display_name || u.email || '?';
-    const initials = name.trim().split(/\s+/).map(w=>w[0]).join('').toUpperCase().slice(0,2);
-    const colours  = { admin:'#8B6914', editor:'#5C7A5C', viewer:'#7A6652' };
-    const bg       = colours[u.role] || '#7A6652';
-    return u.avatar_url
-      ? `<img src="${u.avatar_url}" title="${esc(name)}" style="width:22px;height:22px;border-radius:50%;object-fit:cover;border:2px solid var(--bg-elevated);margin-left:-4px;" />`
-      : `<div title="${esc(name)}" style="width:22px;height:22px;border-radius:50%;background:${bg};color:#fff;font-size:9px;font-weight:700;display:flex;align-items:center;justify-content:center;border:2px solid var(--bg-elevated);margin-left:-4px;font-family:var(--font-ui);">${initials}</div>`;
+    const initials = name.trim().split(/\s+/).map(w => w[0]).join('').toUpperCase().slice(0, 2) || '?';
+    const bg       = colours[u.role] || '#9A8778';
+    const zIdx     = 10 - i;
+    const ml       = i === 0 ? '0' : '-6px';
+    const chipStyle = `width:24px;height:24px;border-radius:50%;border:2px solid var(--bg-elevated);margin-left:${ml};z-index:${zIdx};position:relative;flex-shrink:0;overflow:hidden;cursor:default;box-shadow:0 1px 4px rgba(0,0,0,.15);`;
+    if (u.avatar_url && u.avatar_url.startsWith('data:')) {
+      return `<img src="${u.avatar_url}" title="${esc(name)}" style="${chipStyle}object-fit:cover;"/>`;
+    }
+    return `<div title="${esc(name)}" style="${chipStyle}background:${bg};color:#fff;font-size:9px;font-weight:700;display:flex;align-items:center;justify-content:center;font-family:var(--font-ui);">${esc(initials)}</div>`;
   }).join('');
+
+  // Show "+N more" if more than 5
+  if (users.length > 5) {
+    avatarsEl.innerHTML += `<div style="width:24px;height:24px;border-radius:50%;background:var(--bg-surface);border:2px solid var(--border-default);margin-left:-6px;z-index:5;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;color:var(--text-secondary);font-family:var(--font-ui);">+${users.length-5}</div>`;
+  }
 }
