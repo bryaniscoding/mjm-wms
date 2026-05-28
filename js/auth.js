@@ -100,18 +100,21 @@ async function loadUserRole() {
   const uid = _session?.user?.id;
   if (!uid) { _userRole = 'viewer'; return; }
 
-  // Load from localStorage cache instantly (avoids flash of wrong role)
+  // ALWAYS hit the DB first — never trust cache for role
+  // This ensures deactivated users are blocked immediately on refresh
+  // Cache is only used for display_name/avatar (not for access control)
   const cached = localStorage.getItem('mjm_user_profile');
   if (cached) {
     try {
       const c = JSON.parse(cached);
       if (c.uid === uid) {
-        _userRole    = c.role         || 'viewer';
-        _displayName = c.displayName  || '';
-        _avatarUrl   = c.avatarUrl    || '';
+        // Only restore non-critical display fields from cache
+        _displayName  = c.displayName  || '';
+        _avatarUrl    = c.avatarUrl    || '';
         _moduleAccess = c.moduleAccess || [];
+        // DO NOT restore role from cache — always fetch from DB
       }
-    } catch(e) { /* ignore bad cache */ }
+    } catch(e) { /* ignore */ }
   }
 
   // Then fetch fresh from Supabase and update
@@ -634,21 +637,25 @@ async function unblockUser(userId) {
 
 async function deleteUserRole(userId) {
   try {
-    // Mark role as 'pending' to block access immediately
-    // (pending users are rejected at login — they see "awaiting approval" message)
+    // Set role to 'pending' — the role watchdog on their device checks every 30s
+    // and forces logout when it detects pending role
     const res = await fetch(`${MGMT_URL}/rest/v1/user_roles?user_id=eq.${encodeURIComponent(userId)}`, {
       method: 'PATCH',
-      headers: { 'apikey': SUPA_ANON, 'Authorization': 'Bearer ' + (window._authToken || SUPA_ANON), 'Content-Type': 'application/json', 'Prefer': 'return=minimal' },
-      body: JSON.stringify({ role: 'pending', display_name: null })
+      headers: {
+        'apikey': SUPA_ANON,
+        'Authorization': 'Bearer ' + (window._authToken || SUPA_ANON),
+        'Content-Type': 'application/json',
+        'Prefer': 'return=minimal'
+      },
+      body: JSON.stringify({ role: 'pending', last_seen: null })
     });
     if (res.ok) {
-      // Clear their localStorage cache so they can't reload and bypass
-      showToast('User deactivated — they will be logged out on next action.');
+      showToast('User deactivated — their session will be terminated within 30 seconds.');
       loadAllUsers();
     } else {
       const errText = await res.text();
-      console.error('Delete user error:', errText);
-      showToast('Failed to deactivate user: ' + errText, true);
+      console.error('Deactivate error:', errText);
+      showToast('Failed to deactivate: ' + errText.slice(0,120), true);
     }
   } catch(e) {
     showToast('Error: ' + e.message, true);
@@ -890,6 +897,31 @@ async function initPresence() {
     await heartbeat();
     await fetchActiveUsers();
   }, 5000);
+
+  // Role watchdog — check own role from DB every 30 seconds
+  // If deactivated/pending, force logout immediately
+  if (window._roleWatchdog) clearInterval(window._roleWatchdog);
+  window._roleWatchdog = setInterval(async () => {
+    try {
+      const uid = currentUser()?.id; if (!uid) return;
+      const res = await fetch(
+        `${MGMT_URL}/rest/v1/user_roles?user_id=eq.${encodeURIComponent(uid)}&select=role`,
+        { headers: { 'apikey': SUPA_ANON, 'Authorization': 'Bearer ' + (window._authToken || SUPA_ANON) } }
+      );
+      if (!res.ok) return;
+      const data = await res.json();
+      const role = data[0]?.role;
+      if (!role || role === 'pending') {
+        // Deactivated — force logout
+        clearInterval(window._roleWatchdog);
+        clearInterval(window._presenceInterval);
+        localStorage.removeItem('mjm_user_profile');
+        localStorage.removeItem('mjm_session');
+        await authLogout();
+        alert('🚫 Your account has been deactivated. Please contact your administrator.');
+      }
+    } catch(e) { /* ignore network errors */ }
+  }, 30000);
 
   // Also refresh instantly when tab regains focus
   if (!window._presenceFocusListener) {
