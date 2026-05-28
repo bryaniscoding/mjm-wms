@@ -511,6 +511,8 @@ async function loadAllUsers() {
     else _allUsers = [];
   } catch(e) { _allUsers = []; }
   renderUserMgmtTable();
+  renderNewRegistrationsTable();
+  renderNewRegBanner();
 }
 
 function filterUsers()      { renderUserMgmtTable(); }
@@ -522,7 +524,7 @@ function renderUserMgmtTable() {
   const tbody  = document.getElementById('user-mgmt-table-body');
   if (!tbody) return;
 
-  let rows = _allUsers.filter(u => !!u.email); // skip orphaned rows (deleted from auth but row remains)
+  let rows = _allUsers.filter(u => !!u.email && u.role !== 'pending'); // skip orphaned + pending (handled in new-registrations page)
   if (query) rows = rows.filter(u => (u.email||'').toLowerCase().includes(query));
   if (roleF) rows = rows.filter(u => u.role === roleF);
 
@@ -978,3 +980,87 @@ function renderPresenceBox(users) {
     avatarsEl.innerHTML += `<div style="width:24px;height:24px;border-radius:50%;background:var(--bg-surface);border:2px solid var(--border-default);margin-left:-6px;z-index:5;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;color:var(--text-secondary);font-family:var(--font-ui);">+${users.length-5}</div>`;
   }
 }
+
+// ══════════════════════════════════════════════════════════════
+//  NEW REGISTRATIONS
+// ══════════════════════════════════════════════════════════════
+
+function renderNewRegistrationsTable() {
+  const pending   = _allUsers.filter(u => !!u.email && u.role === 'pending');
+  const tbody     = document.getElementById('new-reg-table-body');
+  const emptyEl   = document.getElementById('new-reg-empty');
+  const tableWrap = document.getElementById('new-reg-table-wrap');
+  const countEl   = document.getElementById('new-reg-count');
+
+  // Update nav badge
+  const badge = document.getElementById('reg-nav-badge');
+  if (badge) {
+    if (pending.length) { badge.textContent = pending.length; badge.style.display = 'inline'; }
+    else                { badge.style.display = 'none'; }
+  }
+
+  if (!tbody) return;
+
+  if (!pending.length) {
+    if (emptyEl)   emptyEl.style.display   = 'block';
+    if (tableWrap) tableWrap.style.display = 'none';
+    if (countEl)   countEl.textContent     = '';
+    return;
+  }
+
+  if (emptyEl)   emptyEl.style.display   = 'none';
+  if (tableWrap) tableWrap.style.display = 'block';
+
+  tbody.innerHTML = pending.map(u => `
+    <tr>
+      <td>
+        <div style="font-family:var(--font-ui);font-weight:600;color:var(--text-primary);">${esc(u.email||'—')}</div>
+      </td>
+      <td style="font-family:var(--font-mono);font-size:12.5px;color:var(--text-secondary);">
+        ${u.created_at ? new Date(u.created_at).toLocaleString('en-MY',{day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'}) : '—'}
+      </td>
+      <td>
+        <div class="action-group">
+          <button class="btn-primary btn-sm" onclick="approveRegistration('${u.user_id}','${esc(u.email||'')}')" style="display:inline-flex;align-items:center;gap:6px;">✅ Approve</button>
+          <button class="btn-danger btn-sm"  onclick="rejectRegistration('${u.user_id}','${esc(u.email||'')}')"  style="display:inline-flex;align-items:center;gap:6px;">✕ Reject</button>
+        </div>
+      </td>
+    </tr>`).join('');
+
+  if (countEl) countEl.textContent = `${pending.length} pending registration${pending.length!==1?'s':''}`;
+}
+
+async function approveRegistration(userId, email) {
+  // Open role modal to assign a role before granting access
+  openChangeRoleModal(userId, email, 'viewer', []);
+}
+
+async function rejectRegistration(userId, email) {
+  if (!confirm(`Reject registration for ${email}?\n\nThis will permanently delete their account.`)) return;
+  await deleteUserRole(userId);
+  renderNewRegistrationsTable();
+}
+
+function renderNewRegBanner() {
+  const el = document.getElementById('new-reg-banner');
+  if (!el || !isAdmin()) return;
+  const pending = _allUsers.filter(u => !!u.email && u.role === 'pending');
+  if (!pending.length) { el.style.display = 'none'; return; }
+  el.style.display = 'block';
+  el.innerHTML = `
+    <div style="display:flex;align-items:center;gap:16px;padding:16px 22px;background:rgba(139,105,20,.08);border:1.5px solid rgba(139,105,20,.35);border-radius:var(--r-lg);cursor:pointer;" onclick="navigateTo('new-registrations')">
+      <div style="font-size:26px;">🆕</div>
+      <div style="flex:1;">
+        <div style="font-family:var(--font-ui);font-weight:700;font-size:var(--text-sm);color:var(--text-primary);margin-bottom:2px;">
+          ${pending.length} new registration${pending.length!==1?'s':''} awaiting approval
+        </div>
+        <div style="font-size:12.5px;color:var(--text-secondary);">
+          ${pending.map(u=>esc(u.email)).join(', ')}
+        </div>
+      </div>
+      <div style="font-family:var(--font-ui);font-size:var(--text-sm);font-weight:600;color:var(--accent-primary);">Review →</div>
+    </div>`;
+}
+
+window.renderNewRegBanner = renderNewRegBanner;
+window.renderNewRegistrationsTable = renderNewRegistrationsTable;

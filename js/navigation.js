@@ -49,7 +49,7 @@ function navigateTo(page) {
 
   if (page === 'worker-list')        { populateWorkerFilters(); renderWorkerTable(); }
   if (page === 'worker-termination')  { renderTerminationTable(); }
-  if (page === 'dashboard')          { initialiseDashDates(); updateDashboardStats(); renderDashboardChart(); renderDashPanels(); renderOnboardingBanner(); }
+  if (page === 'dashboard')          { initialiseDashDates(); updateDashboardStats(); renderDashboardChart(); renderDashPanels(); renderOnboardingBanner(); if(typeof renderNewRegBanner==='function') renderNewRegBanner(); }
   if (page === 'doc-status')         { populateDocFilters(); renderDocTable(); }
   if (page === 'doc-application')    { populateAppFilters(); renderAppTable(); }
   if (page === 'ap-quota')           renderApQuotaTable();
