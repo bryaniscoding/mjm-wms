@@ -552,8 +552,13 @@ function renderUserMgmtTable() {
       <td>${statusBadge}</td>
       <td style="font-size:12.5px;color:var(--text3);">${u.created_at ? new Date(u.created_at).toLocaleDateString('en-MY') : '—'}</td>
       <td><div class="action-group">
-        <button class="action-btn" title="Change Role" onclick="openChangeRoleModal('${u.user_id}','${esc(u.email||'')}','${u.role||'viewer'}',${JSON.stringify(u.module_access||[])})">✏️</button>
-        <button class="action-btn danger" title="Remove User" onclick="confirmDeleteUser('${u.user_id}','${esc(u.email||'')}')">🗑️</button>
+        ${u.role === 'inactive' ? `
+          <button class="action-btn" title="Reactivate" onclick="reactivateUser('${u.user_id}','${esc(u.email||'')}')" style="color:var(--accent-sage);">🔓</button>
+        ` : `
+          <button class="action-btn" title="Edit Role" onclick="openChangeRoleModal('${u.user_id}','${esc(u.email||'')}','${u.role||'viewer'}',${JSON.stringify(u.module_access||[])})">✏️</button>
+          <button class="action-btn" title="Deactivate — keeps account, revokes access" onclick="deactivateUser('${u.user_id}','${esc(u.email||'')}')" style="color:var(--accent-clay);">🚫</button>
+        `}
+        <button class="action-btn danger" title="Permanently delete" onclick="confirmDeleteUser('${u.user_id}','${esc(u.email||'')}')">🗑️</button>
       </div></td>
     </tr>`;
   }).join('');
