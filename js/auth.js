@@ -637,6 +637,19 @@ async function unblockUser(userId) {
 
 async function deleteUserRole(userId) {
   try {
+    // Step 1: Set role to 'pending' immediately so watchdog kicks them out within 30s
+    await fetch(`${MGMT_URL}/rest/v1/user_roles?user_id=eq.${encodeURIComponent(userId)}`, {
+      method: 'PATCH',
+      headers: {
+        'apikey': SUPA_ANON,
+        'Authorization': 'Bearer ' + (window._authToken || SUPA_ANON),
+        'Content-Type': 'application/json',
+        'Prefer': 'return=minimal'
+      },
+      body: JSON.stringify({ role: 'pending', last_seen: null })
+    });
+
+    // Step 2: Call edge function to permanently delete from Supabase Auth
     const res = await fetch(`${MGMT_URL}/functions/v1/delete-user`, {
       method: 'POST',
       headers: {
@@ -650,7 +663,7 @@ async function deleteUserRole(userId) {
     const data = await res.json();
 
     if (res.ok && data.success) {
-      showToast('User permanently deleted — their access is revoked immediately.');
+      showToast('User deleted — they will be logged out within 30 seconds.');
       loadAllUsers();
     } else {
       showToast('Failed to delete user: ' + (data.error || 'Unknown error'), true);
@@ -909,17 +922,17 @@ async function initPresence() {
       if (!res.ok) return;
       const data = await res.json();
       const role = data[0]?.role;
-      if (!role || role === 'pending') {
-        // Deactivated — force logout
+      // No record OR pending = deleted/deactivated
+      if (!data.length || !role || role === 'pending') {
         clearInterval(window._roleWatchdog);
         clearInterval(window._presenceInterval);
         localStorage.removeItem('mjm_user_profile');
         localStorage.removeItem('mjm_session');
         await authLogout();
-        alert('🚫 Your account has been deactivated. Please contact your administrator.');
+        alert('🚫 Your account has been removed. Please contact your administrator.');
       }
     } catch(e) { /* ignore network errors */ }
-  }, 30000);
+  }, 10000);
 
   // Also refresh instantly when tab regains focus
   if (!window._presenceFocusListener) {
