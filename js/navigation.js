@@ -17,6 +17,7 @@ const PAGE_MAP = {
   'settings-prices':    'page-settings-prices',
   'settings-companies':  'page-settings-companies',
   'user-management':     'page-user-management',
+  'new-registrations':   'page-new-registrations',
 };
 
 const BREADCRUMB_MAP = {
@@ -34,6 +35,7 @@ const BREADCRUMB_MAP = {
   'settings-prices':    'System › Settings › Document Application Prices',
   'settings-companies': 'System › Settings › AP Quota Companies',
   'user-management':    'User Management › All Users',
+  'new-registrations':  'User Management › New Registrations',
 };
 
 function navigateTo(page) {
@@ -62,6 +64,7 @@ function navigateTo(page) {
   if (page === 'settings-companies') renderApCompanyTable();
 
   if (page === 'user-management')    loadAllUsers();
+  if (page === 'new-registrations')  { if (typeof loadAllUsers === 'function') loadAllUsers(); }
 }
 
 function toggleSidebar() { document.getElementById('sidebar')?.classList.toggle('open'); }
