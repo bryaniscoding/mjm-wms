@@ -324,13 +324,13 @@ async function doLogin() {
   const btn = document.getElementById('login-btn');
   if (btn) { btn.textContent = 'Signing in…'; btn.disabled = true; }
   try {
-    await authLogin(email, pw);
+    await authLogin(email, pw);  // loads role + profile via loadUserRole()
     hideAuthScreen();
     applyRoleUI();
     await loadData();
     populateLeaveFilters();
     navigateTo('dashboard');
-    initPresence();
+    await initPresence();  // after profile loaded — _displayName/_avatarUrl are set
   } catch(e) {
     setAuthError(e.message);
     if (btn) { btn.textContent = 'Sign In'; btn.disabled = false; }
@@ -395,6 +395,10 @@ function applyRoleUI() {
       el.style.background = roleColor;
     }
   }
+
+  // Kick off presence now that profile vars are set
+  // Use a small delay to ensure DOM is ready
+  setTimeout(() => { if (typeof initPresence === 'function') initPresence(); }, 500);
 
   // Topbar avatar + username
   const topbarAvatar = document.getElementById('topbar-avatar');
@@ -831,7 +835,11 @@ async function initPresence() {
       await fetch(`${MGMT_URL}/rest/v1/user_roles?user_id=eq.${encodeURIComponent(user.id)}`, {
         method: 'PATCH',
         headers: { 'apikey': SUPA_ANON, 'Authorization': 'Bearer ' + (window._authToken || SUPA_ANON), 'Content-Type': 'application/json', 'Prefer': 'return=minimal' },
-        body: JSON.stringify({ last_seen: new Date().toISOString() })
+        body: JSON.stringify({
+          last_seen:    new Date().toISOString(),
+          display_name: _displayName || displayName || null,
+          avatar_url:   _avatarUrl   || null,
+        })
       });
     } catch(e) { /* ignore */ }
   }
