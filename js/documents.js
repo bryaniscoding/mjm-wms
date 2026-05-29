@@ -258,6 +258,7 @@ async function saveApplication() {
     const expiry = document.getElementById('app_new_expiry').value;
     if (!reg)    { showAppError('Registration number is required when Actual Date of Receive is filled.'); return; }
     if (!expiry) { showAppError('New Expiry Date is required when Actual Date of Receive is filled.'); return; }
+    if (!_appAttachment) { showAppError('Please upload the new document before saving.'); return; }
   }
 
   const days    = DURATION_RULES[docType]?.[appType] || 0;
@@ -285,25 +286,59 @@ async function saveApplication() {
 
   // Apply new expiry / registration number to worker record
   if (currentAppWorkerId && currentAppWorkerId !== '__NEW__') {
-    // Worker already saved — update in memory + DB
     const w = workers.find(x => x.id === currentAppWorkerId);
     if (w) {
       if (!w.legal) w.legal = {};
-      if (docType === 'Passport') {
-        if (!w.legal.passport) w.legal.passport = {};
-        if (newExpiry)  w.legal.passport.expiry = newExpiry;
-        if (regNumber)  w.legal.passport.number = regNumber;
+
+      // Helper: update a doc type field — moves old doc to history, saves new one
+      function applyDocUpdate(docKey, regKey) {
+        if (!w.legal[docKey]) w.legal[docKey] = {};
+
+        const oldReg    = w.legal[docKey][regKey] || '';
+        const oldExpiry = w.legal[docKey].expiry  || '';
+        const oldHist   = w.legal[docKey].attachments || [];
+
+        // If reg number is changing — require document upload
+        const regChanged = regNumber && regNumber !== oldReg;
+
+        // Build history: new entry goes first
+        let newHistory = [...oldHist];
+
+        if (_appAttachment) {
+          // Prepend new document with new reg/expiry as metadata
+          newHistory = [
+            {
+              id:     genId(),
+              date:   new Date().toISOString(),
+              data:   _appAttachment.data,
+              name:   _appAttachment.name,
+              mime:   _appAttachment.mime,
+              reg:    regNumber || oldReg,
+              expiry: newExpiry || oldExpiry,
+              label:  appType === 'New Application' ? 'New' : 'Renewal',
+            },
+            ...oldHist
+          ];
+        } else if (regChanged && oldHist.length > 0) {
+          // Reg changed but no new upload — just update the metadata on the latest entry
+          // (upload was already required above, so this path means data entry mode)
+          newHistory[0] = { ...newHistory[0], reg: regNumber, expiry: newExpiry || oldExpiry };
+        }
+
+        // Update current reg and expiry
+        if (newExpiry)  w.legal[docKey].expiry  = newExpiry;
+        if (regNumber)  w.legal[docKey][regKey] = regNumber;
+        w.legal[docKey].attachments = newHistory;
+
+        // Confirmation log
+        if (regChanged) {
+          console.log(`${docKey} updated: ${oldReg} → ${regNumber}, expiry: ${oldExpiry} → ${newExpiry}`);
+        }
       }
-      if (docType === 'Labour License') {
-        if (!w.legal.license) w.legal.license = {};
-        if (newExpiry)  w.legal.license.expiry = newExpiry;
-        if (regNumber)  w.legal.license.reg    = regNumber;
-      }
-      if (docType === 'Work Permit') {
-        if (!w.legal.permit) w.legal.permit = {};
-        if (newExpiry)  w.legal.permit.expiry = newExpiry;
-        if (regNumber)  w.legal.permit.reg    = regNumber;
-      }
+
+      if (docType === 'Passport')       applyDocUpdate('passport', 'number');
+      if (docType === 'Labour License') applyDocUpdate('license',  'reg');
+      if (docType === 'Work Permit')    applyDocUpdate('permit',   'reg');
     }
   } else if (currentAppWorkerId === '__NEW__') {
     // Worker not saved yet — write back into the open worker form fields
@@ -374,6 +409,7 @@ async function saveApplication() {
 
 function closeAppModal() {
   closeModal('appModal');
+  _appAttachment = null; // clear attachment on close
   editingAppId = null;
   // If opened from view profile modal, restore it
   if (typeof _returnToView !== 'undefined' && _returnToView) {
@@ -543,4 +579,31 @@ function renderAppTable() {
     (query || docF || locF || staF || aFrom || aTo || rFrom || rTo || hFrom || hTo)
       ? `Showing ${rows.length} of ${nonDataEntryTotal}`
       : ` ${nonDataEntryTotal} application${nonDataEntryTotal !== 1 ? 's' : ''}`;
+}
+
+// ── APPLICATION MODAL ATTACHMENT ─────────────────────────────
+let _appAttachment = null;
+
+function onAppAttachmentChange(input) {
+  const file = input.files[0];
+  if (!file) return;
+  if (file.size > 5 * 1024 * 1024) {
+    showToast('File too large — max 5MB.', true);
+    input.value = '';
+    return;
+  }
+  const reader = new FileReader();
+  reader.onload = e => {
+    _appAttachment = { data: e.target.result, name: file.name, mime: file.type };
+    const nameEl = document.getElementById('app_attachment_name');
+    if (nameEl) nameEl.textContent = file.name;
+  };
+  reader.readAsDataURL(file);
+}
+
+function toggleAppAttachmentField() {
+  const reg    = document.getElementById('app_reg_number')?.value.trim();
+  const group  = document.getElementById('app_attachment_group');
+  // Show upload field whenever a reg number is entered
+  if (group) group.style.display = reg ? 'block' : 'none';
 }
