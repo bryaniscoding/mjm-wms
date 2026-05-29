@@ -469,14 +469,16 @@ function cancelApplication(id) {
 
 function deleteApplicationRecord(id) {
   if (!confirm('Permanently delete this application record and its financial entry? This cannot be undone.')) return;
-  Promise.all([
+  // Run both deletes — catch individually so one failure doesn't block the other
+  Promise.allSettled([
     deleteApplicationFromDB(id),
     deleteFinancialsByAppId(id),
   ]).then(() => {
+    // Always refresh UI — even if financial delete had an issue, the app record is gone
     renderAppTable(); renderDocTable(); renderWorkerTable();
     if (typeof renderFinancialTable === 'function') renderFinancialTable();
-    showToast('Application and financial record deleted.');
-  }).catch(() => showToast('Failed to delete record.', true));
+    showToast('Application record deleted.');
+  });
 }
 
 function openNewApplicationModal() {

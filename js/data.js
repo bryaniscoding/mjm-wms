@@ -80,6 +80,19 @@ async function sbDelete(table, id) {
   return res.ok;
 }
 
+async function sbDeleteWhere(table, filter) {
+  try {
+    const res = await fetch(`${SUPA_URL}/rest/v1/${table}?${filter}`, {
+      method: 'DELETE', headers: HEADERS
+    });
+    // 200, 204 or 404 all mean success for DELETE
+    return res.ok || res.status === 404;
+  } catch(e) {
+    console.warn('sbDeleteWhere error:', e.message);
+    return false; // non-critical, don't throw
+  }
+}
+
 // ── LOAD ALL DATA ─────────────────────────────────────────────
 async function loadData() {
   showLoadingOverlay(true);
