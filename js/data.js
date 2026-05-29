@@ -83,13 +83,17 @@ async function sbDelete(table, id) {
 async function sbDeleteWhere(table, filter) {
   try {
     const res = await fetch(`${SUPA_URL}/rest/v1/${table}?${filter}`, {
-      method: 'DELETE', headers: HEADERS
+      method: 'DELETE',
+      headers: { ...HEADERS, 'Prefer': 'return=minimal' }
     });
-    // 200, 204 or 404 all mean success for DELETE
+    if (!res.ok && res.status !== 404) {
+      const err = await res.text();
+      console.warn('sbDeleteWhere:', res.status, err);
+    }
     return res.ok || res.status === 404;
   } catch(e) {
     console.warn('sbDeleteWhere error:', e.message);
-    return false; // non-critical, don't throw
+    return false;
   }
 }
 
