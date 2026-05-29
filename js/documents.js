@@ -41,14 +41,19 @@ function buildDocRows() {
       { type: 'Work Permit',    expiry: w.legal?.permit?.expiry   || '', mode: 'short' },
     ].forEach(doc => {
       if (!doc.expiry) return;
+      // Find latest completed application for this worker + doc type to get handover date
+      const latestApp = applications
+        .filter(a => a.workerId === w.id && a.docType === doc.type && !a.cancelled && a.handover)
+        .sort((a, b) => (b.appDate || '').localeCompare(a.appDate || ''))[0];
       rows.push({
         workerId: w.id,
         docType:  doc.type,
-        name:     g.name     || '—',
-        location: g.location || '—',
+        name:     g.name       || '—',
+        location: g.location   || '—',
         company:  co,
         expiry:   doc.expiry,
         mode:     doc.mode,
+        handover: latestApp?.handover || '',
       });
     });
   });
@@ -93,7 +98,7 @@ function renderDocTable() {
 
   const tbody = document.getElementById('doc-table-body');
   if (!rows.length) {
-    tbody.innerHTML = `<tr><td colspan="6"><div class="empty-state"><div class="empty-icon">📄</div>
+    tbody.innerHTML = `<tr><td colspan="7"><div class="empty-state"><div class="empty-icon">📄</div>
       <p>${workers.length === 0 ? 'No workers registered yet.' : 'No documents match your search.'}</p>
     </div></td></tr>`;
     document.getElementById('doc-count').textContent = ''; return;
@@ -105,6 +110,7 @@ function renderDocTable() {
     <td>${esc(r.location)}</td>
     <td>${esc(r.company)}</td>
     <td>${expiryCell(r.expiry, r.mode)}</td>
+    <td style="font-family:var(--font-mono);font-size:12.5px;">${r.handover ? formatDate(r.handover) : '—'}</td>
     <td><button class="btn-renew" onclick="openAppModal('${esc(r.workerId)}','${esc(r.docType)}','Renew',false)">Renew</button></td>
   </tr>`).join('');
 
@@ -307,14 +313,15 @@ async function saveApplication() {
   };
 
   // Apply new expiry / registration number to worker record
-  // Only apply legal update on first save (not on subsequent updates to same app)
-  const isFirstSave = !editingAppId;
+  // Applies whenever actualReceive + newExpiry + regNumber are filled
+  // Tracks whether this save already applied the attachment to avoid double-entry
+  const alreadyAppliedAttachment = editingAppId && applications.find(a => a.id === editingAppId)?._attachmentApplied;
+
   if (currentAppWorkerId && currentAppWorkerId !== '__NEW__') {
     const w = workers.find(x => x.id === currentAppWorkerId);
-    if (w && isFirstSave) {
+    if (w && newExpiry && regNumber && actualReceive) {
       if (!w.legal) w.legal = {};
 
-      // Helper: update a doc type field — moves old doc to history, saves new one
       function applyDocUpdate(docKey, regKey) {
         if (!w.legal[docKey]) w.legal[docKey] = {};
 
@@ -322,55 +329,36 @@ async function saveApplication() {
         const oldExpiry = w.legal[docKey].expiry  || '';
         const oldHist   = w.legal[docKey].attachments || [];
 
-        // If reg number is changing — require document upload
-        const regChanged = regNumber && regNumber !== oldReg;
-
-        // Build history: new entry goes first
         let newHistory = [...oldHist];
 
-        if (_appAttachment) {
-          // Prepend new document with new reg/expiry as metadata
-          newHistory = [
-            {
-              id:     genId(),
-              date:   new Date().toISOString(),
-              data:   _appAttachment.data,
-              name:   _appAttachment.name,
-              mime:   _appAttachment.mime,
-              reg:    regNumber || oldReg,
-              expiry: newExpiry || oldExpiry,
-              label:  appType === 'New Application' ? 'New' : 'Renewal',
-            },
-            ...oldHist
-          ];
-        } else if (regChanged && oldHist.length > 0) {
-          // Reg changed but no new upload — just update the metadata on the latest entry
-          // (upload was already required above, so this path means data entry mode)
+        // Only prepend attachment once per application (prevent double-entry)
+        if (_appAttachment && !alreadyAppliedAttachment) {
+          newHistory = [{
+            id:     genId(),
+            date:   new Date().toISOString(),
+            data:   _appAttachment.data,
+            name:   _appAttachment.name,
+            mime:   _appAttachment.mime,
+            reg:    regNumber || oldReg,
+            expiry: newExpiry || oldExpiry,
+            label:  appType === 'New Application' ? 'New' : 'Renewal',
+          }, ...oldHist];
+          // Mark so subsequent saves of this app don't add another entry
+          appData._attachmentApplied = true;
+        } else if (!_appAttachment && newHistory.length > 0) {
+          // No new upload — update metadata on latest entry only
           newHistory[0] = { ...newHistory[0], reg: regNumber, expiry: newExpiry || oldExpiry };
         }
 
-        // Update current reg and expiry
-        if (newExpiry)  w.legal[docKey].expiry  = newExpiry;
-        if (regNumber)  w.legal[docKey][regKey] = regNumber;
+        // Always update current reg and expiry
+        w.legal[docKey].expiry      = newExpiry;
+        w.legal[docKey][regKey]     = regNumber;
         w.legal[docKey].attachments = newHistory;
-
-        // Confirmation log
-        if (regChanged) {
-          console.log(`${docKey} updated: ${oldReg} → ${regNumber}, expiry: ${oldExpiry} → ${newExpiry}`);
-        }
       }
 
       if (docType === 'Passport')       applyDocUpdate('passport', 'number');
       if (docType === 'Labour License') applyDocUpdate('license',  'reg');
       if (docType === 'Work Permit')    applyDocUpdate('permit',   'reg');
-    }
-  } else if (!isFirstSave && currentAppWorkerId && currentAppWorkerId !== '__NEW__') {
-    // Subsequent save of same app — just update worker record without touching attachments
-    const w = workers.find(x => x.id === currentAppWorkerId);
-    if (w) {
-      if (newExpiry && docType === 'Passport')       w.legal.passport.expiry = newExpiry;
-      if (newExpiry && docType === 'Labour License') w.legal.license.expiry  = newExpiry;
-      if (newExpiry && docType === 'Work Permit')    w.legal.permit.expiry   = newExpiry;
     }
   }
   if (currentAppWorkerId === '__NEW__') {
