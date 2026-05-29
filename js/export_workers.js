@@ -289,7 +289,7 @@ async function exportWorkersXLSX(cols, rows, locationFilter, companyFilter) {
   compRow.getCell(1).alignment = LEFT;
   compRow.getCell(2).font      = { name:'Calibri', size:10 };
   compRow.getCell(2).alignment = LEFT;
-  compRow.height = 16;
+  compRow.height = 22;
 
   // ── ROW 3: Work Location ─────────────────────────────────────
   const locRow = ws.addRow(['Work Location(s) :', locationFilter || 'All']);
@@ -298,7 +298,7 @@ async function exportWorkersXLSX(cols, rows, locationFilter, companyFilter) {
   locRow.getCell(1).alignment = LEFT;
   locRow.getCell(2).font      = { name:'Calibri', size:10 };
   locRow.getCell(2).alignment = LEFT;
-  locRow.height = 16;
+  locRow.height = 22;
 
   // ── ROW 4: Generated info ─────────────────────────────────────
   const genRow = ws.addRow([`Generated: ${nowFull}   ·   ${rows.length} record${rows.length!==1?'s':''}`]);
@@ -374,8 +374,12 @@ async function exportWorkersXLSX(cols, rows, locationFilter, companyFilter) {
 
         // Convert px back to EMU for ExcelJS (1px = 9525 EMU)
         const EMU = 9525;
+        // Centre image within cell
+        const offsetX = Math.max(padX, Math.round((cellW_px - drawW) / 2));
+        const offsetY = Math.max(padY, Math.round((cellH_px - drawH) / 2));
+
         ws.addImage(imgId, {
-          tl: { col: colIdx, row: excelRow - 1, nativeCol: colIdx, nativeRow: excelRow - 1, nativeColOff: padX * EMU, nativeRowOff: padY * EMU },
+          tl: { col: colIdx, row: excelRow - 1, nativeCol: colIdx, nativeRow: excelRow - 1, nativeColOff: offsetX * EMU, nativeRowOff: offsetY * EMU },
           ext: { width: Math.round(drawW), height: Math.round(drawH) },
           editAs: 'oneCell',
         });
