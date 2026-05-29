@@ -289,7 +289,7 @@ async function exportWorkersXLSX(cols, rows, locationFilter, companyFilter) {
   compRow.getCell(1).alignment = LEFT;
   compRow.getCell(2).font      = { name:'Calibri', size:10 };
   compRow.getCell(2).alignment = LEFT;
-  compRow.height = 22;
+  compRow.height = 37.5; // ~50px
 
   // ── ROW 3: Work Location ─────────────────────────────────────
   const locRow = ws.addRow(['Work Location(s) :', locationFilter || 'All']);
@@ -298,7 +298,7 @@ async function exportWorkersXLSX(cols, rows, locationFilter, companyFilter) {
   locRow.getCell(1).alignment = LEFT;
   locRow.getCell(2).font      = { name:'Calibri', size:10 };
   locRow.getCell(2).alignment = LEFT;
-  locRow.height = 22;
+  locRow.height = 37.5;  // ~50px
 
   // ── ROW 4: Generated info ─────────────────────────────────────
   const genRow = ws.addRow([`Generated: ${nowFull}   ·   ${rows.length} record${rows.length!==1?'s':''}`]);
