@@ -295,6 +295,7 @@ function populateForm(w) {
   const c = w.claims  || {};
 
   setField('f_name',        g.name);
+  setField('f_gender',      g.gender || '');
   setField('f_workerid',    g.workerId);
   setField('f_nationality', g.nationality);
   setField('f_passport',    g.passport);
@@ -596,6 +597,7 @@ async function saveWorker() {
     id: editingId || genId(),
     general: {
       name:        document.getElementById('f_name')?.value.trim(),
+      gender:      document.getElementById('f_gender')?.value || '',
       workerId:    (() => {
         const manual = document.getElementById('f_workerid')?.value.trim();
         if (editingId) return manual || (workers.find(w=>w.id===editingId)?.general?.workerId || '');
