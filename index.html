@@ -1222,6 +1222,32 @@
   </div>
 </div>
 
+<!-- ═══ MODAL: WORKER EXPORT PICKER ═══ -->
+<div class="modal-overlay" id="workerExportPickerModal" onclick="closeWorkerExportPickerOutside(event)">
+  <div class="modal modal-sm">
+    <div class="modal-header">
+      <h3>Export Worker Profiles</h3>
+      <button class="modal-close" onclick="closeWorkerExportPicker()">✕</button>
+    </div>
+    <div class="modal-body" style="padding:0;">
+      <!-- Select All -->
+      <label style="display:flex;align-items:center;gap:10px;padding:11px 14px;background:var(--bg-surface);border-bottom:2px solid var(--border-default);cursor:pointer;font-family:var(--font-ui);font-weight:700;font-size:13px;">
+        <input type="checkbox" id="wep-select-all" style="width:16px;height:16px;accent-color:var(--accent-primary);cursor:pointer;" onchange="toggleWepAll(this)"/>
+        Select All Columns
+      </label>
+      <!-- Column list -->
+      <div id="wep-col-list" style="max-height:380px;overflow-y:auto;"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-secondary" onclick="closeWorkerExportPicker()">Cancel</button>
+      <div style="display:flex;gap:8px;">
+        <button class="btn-ghost" onclick="doWorkerExport('pdf')">🖨 PDF</button>
+        <button class="btn-primary" onclick="doWorkerExport('xlsx')">📊 Excel</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <div class="toast" id="toast"></div>
 
 <!-- ═══ SCRIPTS — load order matters ═══ -->
@@ -1233,6 +1259,7 @@
 <script src="js/legal.js"></script>
 <script src="js/claims.js"></script>
 <script src="js/workers.js"></script>
+<script src="js/export_workers.js"></script>
 <script src="js/documents.js"></script>
 <script src="js/apquota.js"></script>
 <script src="js/financial.js"></script>
