@@ -236,120 +236,149 @@ function exportWorkersPDF(cols, rows, locationFilter, companyFilter) {
   win.document.close();
 }
 
-// ── XLSX EXPORT ───────────────────────────────────────────────
+// ── XLSX EXPORT using ExcelJS (supports images + full styling) ──
 async function exportWorkersXLSX(cols, rows, locationFilter, companyFilter) {
   showToast('Generating Excel file…');
 
-  // Load SheetJS from CDN
-  if (!window.XLSX) {
+  // Load ExcelJS from CDN
+  if (!window.ExcelJS) {
     await new Promise((resolve, reject) => {
       const s = document.createElement('script');
-      s.src = 'https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js';
+      s.src = 'https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.4.0/exceljs.min.js';
       s.onload = resolve; s.onerror = reject;
       document.head.appendChild(s);
     });
   }
 
-  const wb  = XLSX.utils.book_new();
-  const now = new Date().toLocaleDateString('en-MY', { day:'2-digit', month:'2-digit', year:'numeric' });
+  const wb = new ExcelJS.Workbook();
+  wb.creator = 'MJM Groups WMS';
+  const ws  = wb.addWorksheet('Worker Profiles', {
+    pageSetup: { paperSize: 8, orientation: 'landscape', fitToPage: true, fitToWidth: 1, fitToHeight: 0 },
+    views: [{ showGridLines: false }],
+  });
+
+  const now     = new Date().toLocaleDateString('en-MY', { day:'2-digit', month:'2-digit', year:'numeric' });
   const nowFull = new Date().toLocaleString('en-MY', { day:'2-digit', month:'2-digit', year:'numeric', hour:'2-digit', minute:'2-digit' });
 
-  // Row 1: title
-  // Row 2: AP Quota Company
-  // Row 3: Work Location
-  // Row 4: Generated / blank
-  // Row 5: headers
-  // Row 6+: data
+  // ── STYLES ──────────────────────────────────────────────────
+  const THIN_BORDER = {
+    top:    { style:'thin', color:{ argb:'FF999999' } },
+    bottom: { style:'thin', color:{ argb:'FF999999' } },
+    left:   { style:'thin', color:{ argb:'FF999999' } },
+    right:  { style:'thin', color:{ argb:'FF999999' } },
+  };
+  const CENTER  = { horizontal:'center', vertical:'middle', wrapText:true };
+  const LEFT    = { horizontal:'left',   vertical:'middle', wrapText:true };
+  const HDR_FILL = { type:'pattern', pattern:'solid', fgColor:{ argb:'FF1A5C2A' } };
 
-  const aoa = [];
-  aoa.push(['MJM Groups Worker Profiles', ...Array(cols.length - 1).fill('')]);
-  aoa.push(['AP Quota Company :', companyFilter || 'All', ...Array(cols.length - 2).fill('')]);
-  aoa.push(['Work Location :',    locationFilter || 'All', ...Array(cols.length - 2).fill('')]);
-  aoa.push([`Generated: ${nowFull}  ·  ${rows.length} records`, ...Array(cols.length - 1).fill('')]);
-  aoa.push(cols.map(c => c.label)); // header row (row 5)
+  // ── COLUMN WIDTHS ────────────────────────────────────────────
+  ws.columns = cols.map(c => ({ width: c.width }));
 
-  rows.forEach(r => {
-    aoa.push(cols.map(c => {
-      if (c.isPhoto) return '[Photo]'; // can't embed images in SheetJS community
-      return r[c.key] || '';
-    }));
+  // ── ROW 1: Title — merged, bold, underlined, centered ───────
+  const titleRow = ws.addRow(['MJM Groups Worker Profiles']);
+  ws.mergeCells(1, 1, 1, cols.length);
+  const titleCell = titleRow.getCell(1);
+  titleCell.font      = { name:'Calibri', size:13, bold:true, underline:true };
+  titleCell.alignment = CENTER;
+  titleRow.height = 22;
+
+  // ── ROW 2: AP Quota Company ──────────────────────────────────
+  const compRow = ws.addRow(['AP Quota Company(ies) :', companyFilter || 'All']);
+  ws.mergeCells(2, 2, 2, 3); // merge B2:C2
+  compRow.getCell(1).font      = { name:'Calibri', size:10, bold:true };
+  compRow.getCell(1).alignment = LEFT;
+  compRow.getCell(2).font      = { name:'Calibri', size:10 };
+  compRow.getCell(2).alignment = LEFT;
+  compRow.height = 16;
+
+  // ── ROW 3: Work Location ─────────────────────────────────────
+  const locRow = ws.addRow(['Work Location(s) :', locationFilter || 'All']);
+  ws.mergeCells(3, 2, 3, 3); // merge B3:C3
+  locRow.getCell(1).font      = { name:'Calibri', size:10, bold:true };
+  locRow.getCell(1).alignment = LEFT;
+  locRow.getCell(2).font      = { name:'Calibri', size:10 };
+  locRow.getCell(2).alignment = LEFT;
+  locRow.height = 16;
+
+  // ── ROW 4: Generated info ─────────────────────────────────────
+  const genRow = ws.addRow([`Generated: ${nowFull}   ·   ${rows.length} record${rows.length!==1?'s':''}`]);
+  ws.mergeCells(4, 1, 4, cols.length);
+  genRow.getCell(1).font      = { name:'Calibri', size:9, italic:true, color:{ argb:'FF666666' } };
+  genRow.getCell(1).alignment = LEFT;
+  genRow.height = 14;
+
+  // ── ROW 5: Header row ─────────────────────────────────────────
+  const hdrRow = ws.addRow(cols.map(c => c.label));
+  hdrRow.height = 30;
+  hdrRow.eachCell((cell) => {
+    cell.font      = { name:'Calibri', size:9, bold:true, color:{ argb:'FFFFFFFF' } };
+    cell.fill      = HDR_FILL;
+    cell.alignment = CENTER;
+    cell.border    = THIN_BORDER;
   });
 
-  const ws = XLSX.utils.aoa_to_sheet(aoa);
+  // ── DATA ROWS ─────────────────────────────────────────────────
+  const photoColIdx = cols.findIndex(c => c.isPhoto); // 0-based
 
-  // Column widths
-  ws['!cols'] = cols.map(c => ({ wch: c.width }));
+  for (let ri = 0; ri < rows.length; ri++) {
+    const r        = rows[ri];
+    const excelRow = ri + 6; // Excel row number (1-based, rows 1-5 are header)
+    const ROW_H    = 75;     // points — tall enough for photo
 
-  // Row heights
-  const rowHeights = [
-    { hpt: 20 }, // title
-    { hpt: 14 }, // AP company
-    { hpt: 14 }, // location
-    { hpt: 14 }, // generated
-    { hpt: 28 }, // header
-    ...rows.map(() => ({ hpt: 72 })), // data rows
-  ];
-  ws['!rows'] = rowHeights;
+    // Build row values (empty string for photo column — image added separately)
+    const vals = cols.map(c => c.isPhoto ? '' : (r[c.key] || ''));
+    const dataRow = ws.addRow(vals);
+    dataRow.height = ROW_H;
 
-  // Merge title row A1 across all columns
-  const lastCol = XLSX.utils.encode_col(cols.length - 1);
-  ws['!merges'] = [
-    { s: { r:0, c:0 }, e: { r:0, c:cols.length-1 } },
-  ];
+    // Style all cells
+    dataRow.eachCell({ includeEmpty: true }, (cell, colNumber) => {
+      const col = cols[colNumber - 1];
+      cell.font      = { name:'Calibri', size:9 };
+      cell.alignment = (col && col.isPhoto) ? CENTER : CENTER;
+      cell.border    = THIN_BORDER;
+    });
 
-  // Styling using SheetJS styles (requires xlsx-style or write with styles)
-  // Apply basic formatting via cell styles
-  const GREEN_FILL = { patternType: 'solid', fgColor: { rgb: '1A5C2A' } };
-  const WHITE_FONT = { bold: true, color: { rgb: 'FFFFFF' }, sz: 9, name: 'Calibri' };
-  const BOLD_FONT  = { bold: true, sz: 11, name: 'Calibri' };
-  const NORM_FONT  = { sz: 9, name: 'Calibri' };
-  const CENTER     = { horizontal: 'center', vertical: 'center', wrapText: true };
-  const LEFT       = { horizontal: 'left',   vertical: 'center', wrapText: true };
-  const BORDER     = { top:{style:'thin'}, bottom:{style:'thin'}, left:{style:'thin'}, right:{style:'thin'} };
+    // ── Embed profile photo if column is selected and photo exists ──
+    if (photoColIdx >= 0 && r.photo) {
+      try {
+        // Convert data URI to base64
+        const dataUri = r.photo;
+        const base64  = dataUri.split(',')[1];
+        const mimeMatch = dataUri.match(/data:([^;]+);/);
+        const ext = mimeMatch ? (mimeMatch[1].includes('png') ? 'png' : 'jpeg') : 'jpeg';
 
-  // Title cell
-  const titleCell = ws['A1'];
-  if (titleCell) {
-    titleCell.s = { font: BOLD_FONT, alignment: CENTER };
+        const imgId = wb.addImage({ base64, extension: ext });
+
+        // Position image in the photo cell
+        // ExcelJS uses 0-based col/row for positioning
+        const colIdx = photoColIdx; // 0-based
+        ws.addImage(imgId, {
+          tl: { col: colIdx + 0.1, row: excelRow - 1 + 0.1 },
+          br: { col: colIdx + 0.9, row: excelRow - 0.1 },
+          editAs: 'oneCell',
+        });
+      } catch(e) {
+        // Photo embed failed — leave cell empty
+        console.warn('Photo embed failed:', e.message);
+      }
+    }
   }
 
-  // Header row (row index 4 = row 5)
-  cols.forEach((c, ci) => {
-    const addr = XLSX.utils.encode_cell({ r: 4, c: ci });
-    if (ws[addr]) {
-      ws[addr].s = {
-        font: WHITE_FONT,
-        fill: GREEN_FILL,
-        alignment: CENTER,
-        border: BORDER,
-      };
-    }
-  });
-
-  // Data rows
-  rows.forEach((r, ri) => {
-    cols.forEach((c, ci) => {
-      const addr = XLSX.utils.encode_cell({ r: 5 + ri, c: ci });
-      if (ws[addr]) {
-        ws[addr].s = {
-          font: NORM_FONT,
-          alignment: c.isPhoto ? CENTER : (ci === 2 ? LEFT : CENTER),
-          border: BORDER,
-        };
-      }
-    });
-  });
-
-  // Page setup: landscape A4
-  ws['!pageSetup'] = {
-    paperSize: 8,  // A4
-    orientation: 'landscape',
-    fitToWidth: 1,
-    fitToHeight: 0,
+  // ── PAGE MARGINS (match template) ────────────────────────────
+  ws.pageSetup.margins = {
+    left: 0.24, right: 0.24,
+    top: 0.24,  bottom: 0.75,
+    header: 0.31, footer: 0.31,
   };
-  ws['!printOptions'] = { gridLines: false };
 
-  XLSX.utils.book_append_sheet(wb, ws, 'Worker Profiles');
-  XLSX.writeFile(wb, `MJM_Worker_Profiles_${now.replace(/\//g,'-')}.xlsx`);
+  // ── DOWNLOAD ──────────────────────────────────────────────────
+  const buffer = await wb.xlsx.writeBuffer();
+  const blob   = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+  const url    = URL.createObjectURL(blob);
+  const a      = document.createElement('a');
+  a.href       = url;
+  a.download   = `MJM_Worker_Profiles_${now.replace(/\//g,'-')}.xlsx`;
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(url), 5000);
   showToast('Excel file downloaded.');
 }
