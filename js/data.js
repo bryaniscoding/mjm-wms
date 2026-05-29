@@ -164,13 +164,16 @@ function mapWorkerFromDB(r) {
       location: r.location, termination: r.termination, departure: r.departure,
       abscondedDate: r.absconded_date, remarks: r.remarks, photo: r.photo,
     },
-    legal: {
-      passport: { number: r.passport_number, expiry: r.passport_expiry },
-      quota:    { company: r.quota_company, kdn: r.quota_kdn, slot: r.quota_slot },
-      license:  { reg: r.license_reg, expiry: r.license_expiry },
-      socso:    { reg: r.socso_reg },
-      permit:   { reg: r.permit_reg, expiry: r.permit_expiry },
-    },
+    legal: (() => {
+      const att = r.legal_attachments || {};
+      return {
+        passport: { number: r.passport_number, expiry: r.passport_expiry, attachments: att.passport || [] },
+        quota:    { company: r.quota_company, kdn: r.quota_kdn, slot: r.quota_slot },
+        license:  { reg: r.license_reg, expiry: r.license_expiry, attachments: att.license || [] },
+        socso:    { reg: r.socso_reg },
+        permit:   { reg: r.permit_reg, expiry: r.permit_expiry, attachments: att.permit || [] },
+      };
+    })(),
     claims: { claim1: r.claim1, claim2: r.claim2, claim3: r.claim3 },
     categoryOverride: r.category_override,
     categoryOverrideMeta: r.category_override_meta,
@@ -206,6 +209,11 @@ function mapWorkerToDB(w) {
     socso_reg:             l.socso?.reg        || null,
     permit_reg:            l.permit?.reg       || null,
     permit_expiry:         l.permit?.expiry    || null,
+    legal_attachments:     {
+      passport: l.passport?.attachments || [],
+      license:  l.license?.attachments  || [],
+      permit:   l.permit?.attachments   || [],
+    },
     claim1:                w.claims?.claim1    || null,
     claim2:                w.claims?.claim2    || null,
     claim3:                w.claims?.claim3    || null,

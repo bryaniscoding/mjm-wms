@@ -560,6 +560,9 @@ function validateGeneralTab() {
 async function saveWorker() {
   if (!validateGeneralTab()) { switchTab(0); return; }
 
+  // Capture existing worker for merging attachment history
+  const existingWorker = editingId ? workers.find(x => x.id === editingId) : null;
+
   const img   = document.getElementById('photoPreview');
   const photo = (img.style.display !== 'none' && img.src && img.src !== window.location.href) ? img.src : '';
   const override = document.getElementById('f_category_override')?.value || null;
@@ -608,13 +611,35 @@ async function saveWorker() {
       abscondedDate: abscondedDate || null,
       photo,
     },
-    legal: {
-      passport: { number: document.getElementById('f_passport_num')?.value.trim(), expiry: document.getElementById('f_passport_expiry')?.value },
-      quota:    { company: quotaCo, kdn: document.getElementById('f_quota_kdn')?.value.trim(), slot: document.getElementById('f_quota_slot')?.value.trim() },
-      license:  { reg: document.getElementById('f_license_reg')?.value.trim(), expiry: document.getElementById('f_license_expiry')?.value },
-      socso:    { reg: document.getElementById('f_socso_reg')?.value.trim() },
-      permit:   { reg: document.getElementById('f_permit_reg')?.value.trim(), expiry: document.getElementById('f_permit_expiry')?.value },
-    },
+    legal: (() => {
+      // Build attachment histories — prepend new upload to existing history
+      const prevLegal = existingWorker?.legal || {};
+
+      function buildAttachmentHistory(type) {
+        const existing = prevLegal[type]?.attachments || [];
+        const newFile  = _attachments[type];
+        const reg      = document.getElementById(`f_${type === 'passport' ? 'passport_num' : type + '_reg'}`)?.value.trim() || '';
+        const expiry   = document.getElementById(`f_${type}_expiry`)?.value || '';
+        if (!newFile) return existing; // no new upload — keep history as is
+        // Prepend new entry to history
+        return [{ id: genId(), date: new Date().toISOString(), data: newFile.data, name: newFile.name, mime: newFile.mime, reg, expiry }, ...existing];
+      }
+
+      const passportNum    = document.getElementById('f_passport_num')?.value.trim()  || '';
+      const passportExpiry = document.getElementById('f_passport_expiry')?.value      || '';
+      const licenseReg     = document.getElementById('f_license_reg')?.value.trim()   || '';
+      const licenseExpiry  = document.getElementById('f_license_expiry')?.value       || '';
+      const permitReg      = document.getElementById('f_permit_reg')?.value.trim()    || '';
+      const permitExpiry   = document.getElementById('f_permit_expiry')?.value        || '';
+
+      return {
+        passport: { number: passportNum, expiry: passportExpiry, attachments: buildAttachmentHistory('passport') },
+        quota:    { company: quotaCo, kdn: document.getElementById('f_quota_kdn')?.value.trim(), slot: document.getElementById('f_quota_slot')?.value.trim() },
+        license:  { reg: licenseReg, expiry: licenseExpiry, attachments: buildAttachmentHistory('license') },
+        socso:    { reg: document.getElementById('f_socso_reg')?.value.trim() },
+        permit:   { reg: permitReg, expiry: permitExpiry, attachments: buildAttachmentHistory('permit') },
+      };
+    })(),
     claims: {
       claim1: document.getElementById('f_claim1_date')?.value,
       claim2: document.getElementById('f_claim2_date')?.value,
@@ -1020,9 +1045,9 @@ function loadAttachmentPreviews(w) {
     const nameEl  = document.getElementById(`f_${type}_attachment_name`);
     const linkEl  = document.getElementById(`f_${type}_attachment_link`);
     const inputEl = document.getElementById(`f_${type}_attachment`);
-    if (inputEl) inputEl.value = '';
+    if (inputEl) inputEl.value = ''; // clear file input
     if (latest) {
-      if (nameEl) nameEl.textContent = latest.name || 'Existing document';
+      if (nameEl) nameEl.textContent = `📄 ${latest.name || 'Existing document'} (${new Date(latest.date).toLocaleDateString('en-MY')})`;
       if (linkEl) { linkEl.href = latest.data; linkEl.style.display = 'inline'; }
     } else {
       if (nameEl) nameEl.textContent = '';
