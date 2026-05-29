@@ -834,10 +834,18 @@
         <div class="form-group"><label>Application Date</label><input type="date" id="app_date" onchange="calcEstReceive()"/></div>
         <div class="form-group"><label>Est. Duration</label><input type="text" id="app_duration" readonly class="readonly-field"/></div>
         <div class="form-group"><label>Est. Date of Receive</label><input type="text" id="app_est_receive" readonly class="readonly-field"/></div>
-        <div class="form-group"><label>Actual Date of Receive</label><input type="date" id="app_actual_receive"/></div>
+        <div class="form-group"><label>Actual Date of Receive</label><input type="date" id="app_actual_receive" onchange="toggleAppAttachmentField()"/></div>
         <div class="form-group full-width"><label>Handover to Estate Date</label><input type="date" id="app_handover"/></div>
-        <div class="form-group full-width"><label id="app_reg_label">Registration Number</label><input type="text" id="app_reg_number" placeholder="New registration number (replaces existing)"/></div>
+        <div class="form-group full-width"><label id="app_reg_label">Registration Number</label><input type="text" id="app_reg_number" placeholder="New registration number (replaces existing)" oninput="toggleAppAttachmentField()"/></div>
         <div class="form-group full-width"><label id="app_expiry_label">New Expiry Date</label><input type="date" id="app_new_expiry"/></div>
+        <div class="form-group full-width" id="app_attachment_group" style="display:none;margin-top:4px;padding:14px;background:rgba(139,105,20,.06);border:1.5px solid rgba(139,105,20,.3);border-radius:var(--r-md);">
+          <label style="color:var(--accent-primary);">📎 Document Upload <span class="required">*</span> <span class="field-note">Required — upload the physical document received</span></label>
+          <div class="attachment-row" style="margin-top:8px;">
+            <input type="file" id="app_attachment_file" accept=".pdf,.jpg,.jpeg,.png" style="display:none;" onchange="onAppAttachmentChange(this)"/>
+            <label for="app_attachment_file" class="btn-primary btn-sm" style="cursor:pointer;">📎 Choose File</label>
+            <span id="app_attachment_name" style="font-size:12.5px;color:var(--text-secondary);margin-left:8px;font-style:italic;">No file chosen</span>
+          </div>
+        </div>
       </div>
       <div id="appModalError" class="modal-error" style="display:none;"></div>
     </div>

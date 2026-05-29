@@ -274,9 +274,11 @@ async function saveApplication() {
     if (!reg)    { showAppError('Registration number is required when Actual Date of Receive is filled.'); return; }
     if (!expiry) { showAppError('New Expiry Date is required when Actual Date of Receive is filled.'); return; }
     if (!_appAttachment) {
-      showAppError('Please upload the new document (📎 Upload Document) before saving. This is required to update the document record.');
-      // Scroll upload field into view
-      document.getElementById('app_attachment_group')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      // Force show upload group in case it's hidden
+      const grp = document.getElementById('app_attachment_group');
+      if (grp) grp.style.display = 'block';
+      showAppError('⬆️ Please upload the document file using the 📎 Choose File button above before saving.');
+      grp?.scrollIntoView({ behavior: 'smooth', block: 'center' });
       return;
     }
   }
@@ -622,15 +624,15 @@ function onAppAttachmentChange(input) {
 }
 
 function toggleAppAttachmentField() {
-  const reg     = document.getElementById('app_reg_number')?.value.trim();
-  const appType = document.getElementById('app_type')?.value || '';
-  const actual  = document.getElementById('app_actual_receive')?.value || '';
-  const group   = document.getElementById('app_attachment_group');
+  const reg    = document.getElementById('app_reg_number')?.value.trim();
+  const actual = document.getElementById('app_actual_receive')?.value || '';
+  const group  = document.getElementById('app_attachment_group');
   if (!group) return;
+  // Always show when actual receive OR reg number is filled
+  group.style.display = (reg || actual) ? 'block' : 'none';
+}
 
-  // Show upload when:
-  // - reg number is entered, OR
-  // - actual receive date is filled (document received — need to upload it)
-  const shouldShow = !!(reg || actual);
-  group.style.display = shouldShow ? 'block' : 'none';
+// Call this everywhere a relevant field changes
+function onAppFieldChange() {
+  toggleAppAttachmentField();
 }
