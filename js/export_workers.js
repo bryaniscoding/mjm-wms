@@ -284,7 +284,7 @@ async function exportWorkersXLSX(cols, rows, locationFilter, companyFilter) {
 
   // ── ROW 2: AP Quota Company ──────────────────────────────────
   const compRow = ws.addRow(['AP Quota Company(ies) :', companyFilter || 'All']);
-  ws.mergeCells(2, 2, 2, 3); // merge B2:C2
+  ws.mergeCells(2, 2, 2, cols.length); // merge B2 to last col
   compRow.getCell(1).font      = { name:'Calibri', size:10, bold:true };
   compRow.getCell(1).alignment = LEFT;
   compRow.getCell(2).font      = { name:'Calibri', size:10 };
@@ -293,7 +293,7 @@ async function exportWorkersXLSX(cols, rows, locationFilter, companyFilter) {
 
   // ── ROW 3: Work Location ─────────────────────────────────────
   const locRow = ws.addRow(['Work Location(s) :', locationFilter || 'All']);
-  ws.mergeCells(3, 2, 3, 3); // merge B3:C3
+  ws.mergeCells(3, 2, 3, cols.length); // merge B3 to last col
   locRow.getCell(1).font      = { name:'Calibri', size:10, bold:true };
   locRow.getCell(1).alignment = LEFT;
   locRow.getCell(2).font      = { name:'Calibri', size:10 };
@@ -352,9 +352,31 @@ async function exportWorkersXLSX(cols, rows, locationFilter, companyFilter) {
         // Position image in the photo cell
         // ExcelJS uses 0-based col/row for positioning
         const colIdx = photoColIdx; // 0-based
+        // Calculate proper aspect ratio from image
+        const imgEl = new Image();
+        imgEl.src = dataUri;
+        await new Promise(res => { imgEl.onload = res; imgEl.onerror = res; });
+        const imgW = imgEl.naturalWidth  || 100;
+        const imgH = imgEl.naturalHeight || 120;
+        const ratio = imgW / imgH;
+
+        // Cell dimensions (approximate): col width in chars * 7px, row height in pt * 1.33px
+        const cellW_px = (cols[colIdx].width || 16) * 7;
+        const cellH_px = ROW_H * 1.33;
+
+        // Fit image maintaining aspect ratio within cell with padding
+        const padX = 4, padY = 4;
+        const availW = cellW_px - padX * 2;
+        const availH = cellH_px - padY * 2;
+        let drawW = availW;
+        let drawH = drawW / ratio;
+        if (drawH > availH) { drawH = availH; drawW = drawH * ratio; }
+
+        // Convert px back to EMU for ExcelJS (1px = 9525 EMU)
+        const EMU = 9525;
         ws.addImage(imgId, {
-          tl: { col: colIdx + 0.1, row: excelRow - 1 + 0.1 },
-          br: { col: colIdx + 0.9, row: excelRow - 0.1 },
+          tl: { col: colIdx, row: excelRow - 1, nativeCol: colIdx, nativeRow: excelRow - 1, nativeColOff: padX * EMU, nativeRowOff: padY * EMU },
+          ext: { width: Math.round(drawW), height: Math.round(drawH) },
           editAs: 'oneCell',
         });
       } catch(e) {
