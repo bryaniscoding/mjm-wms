@@ -175,26 +175,43 @@ function doWorkerExport(format) {
 
 // ── PDF EXPORT ────────────────────────────────────────────────
 function exportWorkersPDF(cols, rows, locationFilter, companyFilter) {
-  const ACCENT = '#1a5c2a'; // dark green header from template
-  const ROW_H  = 70; // px row height for photo rows
+  const ACCENT = '#1a5c2a';
 
-  // Build table header row HTML
-  const thHTML = cols.map(c =>
-    `<th style="background:${ACCENT};color:#fff;padding:6px 5px;border:1px solid #999;font-size:9px;font-weight:700;text-align:center;vertical-align:middle;word-break:break-word;">${esc(c.label)}</th>`
+  // Define explicit widths per column key (mm) — prevents single-char overflow
+  const COL_WIDTHS = {
+    workerId:       18, photo:          18, name:           22,
+    status:         14, gender:         12, category:       14,
+    quotaCompany:   28, location:       20, nationality:    16,
+    passportNo:     16, passportExpiry: 16, passportStatus: 14,
+    joiningDate:    16, recruitment:    16, socso:          20,
+    licenseNo:      36, licenseExpiry:  16, permitNo:       24,
+    permitExpiry:   16, termination:    16, departure:      16,
+  };
+
+  // Build colgroup for fixed widths
+  const colgroupHTML = cols.map(c =>
+    `<col style="width:${COL_WIDTHS[c.key] || 16}mm;"/>`
   ).join('');
 
-  // Build data rows
+  // Header row
+  const thHTML = cols.map(c =>
+    `<th style="background:${ACCENT};color:#fff;padding:5px 4px;border:1px solid #666;font-size:8px;font-weight:700;text-align:center;vertical-align:middle;line-height:1.3;">${esc(c.label)}</th>`
+  ).join('');
+
+  // Data rows — photo cell uses overflow:hidden to clip image strictly inside
   const trHTML = rows.map(r => {
     const tds = cols.map(col => {
-      let val = r[col.key] || '';
-      if (col.isPhoto && val) {
-        return `<td style="padding:3px;border:1px solid #ccc;text-align:center;vertical-align:middle;">
-          <img src="${val}" style="width:50px;height:60px;object-fit:cover;border-radius:3px;" onerror="this.style.display='none'"/>
-        </td>`;
+      const val = r[col.key] || '';
+      if (col.isPhoto) {
+        return val
+          ? `<td style="padding:2px;border:1px solid #ccc;text-align:center;vertical-align:middle;overflow:hidden;max-width:${COL_WIDTHS.photo}mm;">
+               <img src="${val}" style="max-width:100%;max-height:60px;width:auto;height:auto;object-fit:contain;display:block;margin:0 auto;" onerror="this.style.display='none'"/>
+             </td>`
+          : `<td style="border:1px solid #ccc;"></td>`;
       }
-      return `<td style="padding:4px 5px;border:1px solid #ccc;font-size:9px;text-align:center;vertical-align:middle;word-break:break-word;">${esc(String(val))}</td>`;
+      return `<td style="padding:3px 4px;border:1px solid #ccc;font-size:8px;text-align:center;vertical-align:middle;line-height:1.35;overflow-wrap:break-word;word-break:break-word;">${esc(String(val))}</td>`;
     }).join('');
-    return `<tr>${tds}</tr>`;
+    return `<tr style="height:68px;">${tds}</tr>`;
   }).join('');
 
   const now = new Date().toLocaleString('en-MY', { day:'2-digit', month:'2-digit', year:'numeric', hour:'2-digit', minute:'2-digit' });
@@ -203,31 +220,31 @@ function exportWorkersPDF(cols, rows, locationFilter, companyFilter) {
   win.document.write(`<!DOCTYPE html><html><head>
     <title>MJM Groups Worker Profiles</title>
     <style>
-      @page { size: A4 landscape; margin: 6mm 6mm 10mm 6mm; }
-      * { -webkit-print-color-adjust:exact !important; print-color-adjust:exact !important; }
-      body { margin:0; font-family:Calibri,Arial,sans-serif; font-size:9px; }
+      @page { size: A4 landscape; margin: 8mm 6mm 10mm 6mm; }
+      * { -webkit-print-color-adjust:exact !important; print-color-adjust:exact !important; box-sizing:border-box; }
+      body { margin:0; font-family:Calibri,Arial,sans-serif; font-size:8px; }
       table { border-collapse:collapse; width:100%; table-layout:fixed; }
-      th, td { word-break:break-word; overflow-wrap:break-word; }
+      th, td { overflow:hidden; }
+      td img { max-width:100%; max-height:60px; display:block; margin:0 auto; }
       .screen-only { display:flex; }
       @media print { .screen-only { display:none !important; } }
     </style>
   </head><body>
 
-  <!-- Print toolbar -->
   <div class="screen-only" style="padding:10px 14px;background:#f0f4f0;border-bottom:2px solid ${ACCENT};gap:14px;align-items:center;position:sticky;top:0;z-index:10;">
     <button onclick="window.print()" style="background:${ACCENT};color:#fff;border:none;padding:10px 24px;border-radius:7px;font-size:13px;font-weight:700;cursor:pointer;">🖨 Print / Save as PDF</button>
-    <span style="font-size:12px;color:#444;">In print dialog, select <strong>Save as PDF</strong> and set paper to <strong>A4 Landscape</strong>.</span>
+    <span style="font-size:12px;color:#444;">Select <strong>Save as PDF</strong> · paper: <strong>A4 Landscape</strong>.</span>
   </div>
 
-  <!-- Document header -->
-  <div style="text-align:center;font-size:13px;font-weight:700;margin-bottom:6px;margin-top:4px;">MJM Groups Worker Profiles</div>
-  <table style="margin-bottom:6px;border:none;width:auto;">
-    <tr><td style="font-size:9px;font-weight:700;border:none;padding:1px 6px 1px 0;">AP Quota Company :</td><td style="font-size:9px;border:none;padding:1px 0;">${esc(companyFilter || 'All')}</td></tr>
-    <tr><td style="font-size:9px;font-weight:700;border:none;padding:1px 6px 1px 0;">Work Location :</td><td style="font-size:9px;border:none;padding:1px 0;">${esc(locationFilter || 'All')}</td></tr>
-    <tr><td style="font-size:9px;color:#666;border:none;padding:1px 6px 1px 0;">Generated :</td><td style="font-size:9px;color:#666;border:none;padding:1px 0;">${now} &nbsp;·&nbsp; ${rows.length} records</td></tr>
+  <div style="text-align:center;font-size:12px;font-weight:700;margin:4px 0 4px;">MJM Groups Worker Profiles</div>
+  <table style="margin-bottom:5px;border:none;width:auto;">
+    <tr><td style="font-size:8.5px;font-weight:700;border:none;padding:1px 8px 1px 0;white-space:nowrap;">AP Quota Company :</td><td style="font-size:8.5px;border:none;">${esc(companyFilter || 'All')}</td></tr>
+    <tr><td style="font-size:8.5px;font-weight:700;border:none;padding:1px 8px 1px 0;white-space:nowrap;">Work Location :</td><td style="font-size:8.5px;border:none;">${esc(locationFilter || 'All')}</td></tr>
+    <tr><td style="font-size:8.5px;color:#666;border:none;padding:1px 8px 1px 0;white-space:nowrap;">Generated :</td><td style="font-size:8.5px;color:#666;border:none;">${now} &nbsp;·&nbsp; ${rows.length} record${rows.length!==1?'s':''}</td></tr>
   </table>
 
   <table>
+    <colgroup>${colgroupHTML}</colgroup>
     <thead><tr>${thHTML}</tr></thead>
     <tbody>${trHTML}</tbody>
   </table>
