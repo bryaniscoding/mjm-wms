@@ -615,26 +615,24 @@ async function sendUserInvite() {
   if (btn) { btn.textContent = 'Creating…'; btn.disabled = true; }
 
   try {
-    // 1. Create auth account via Supabase signUp
-    const signUpRes = await fetch(`${AUTH_URL}/signup`, {
+    // Use edge function — creates user via admin API (no email confirmation needed)
+    const res = await fetch(`${MGMT_URL}/functions/v1/create-user`, {
       method: 'POST',
-      headers: { 'apikey': SUPA_ANON, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, password: tempPw }),
-    });
-    const signUpData = await signUpRes.json();
-    if (!signUpRes.ok) throw new Error(signUpData.error_description || signUpData.msg || 'Account creation failed.');
-
-    const uid = signUpData.user?.id || signUpData.id;
-    if (!uid) throw new Error('Could not get user ID from Supabase response.');
-
-    // 2. Upsert role + name + module access into user_roles
-    await fetch(`${MGMT_URL}/rest/v1/user_roles`, {
-      method: 'POST',
-      headers: { 'apikey': SUPA_ANON, 'Authorization': 'Bearer ' + (window._authToken||SUPA_ANON), 'Content-Type': 'application/json', 'Prefer': 'return=minimal,resolution=merge-duplicates' },
-      body: JSON.stringify({ user_id: uid, email, role, display_name: name||null, module_access: hiddenModules })
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer ' + (window._authToken || SUPA_ANON),
+        'apikey': SUPA_ANON,
+      },
+      body: JSON.stringify({ email, password: tempPw, role, displayName: name, hiddenModules })
     });
 
-    okEl.textContent = `✅ Account created for ${email}. Share their temporary password: ${tempPw}`;
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Account creation failed.');
+
+    okEl.innerHTML = `✅ Account created for <strong>${esc(email)}</strong>.<br/>
+      Role: <strong>${esc(role)}</strong><br/>
+      Temporary password: <strong>${esc(tempPw)}</strong><br/>
+      <span style="font-size:12px;color:var(--text-tertiary);">They can log in immediately — no email confirmation needed.</span>`;
     okEl.style.display = 'block';
     if (btn) { btn.textContent = 'Create Account'; btn.disabled = false; }
     loadAllUsers();
