@@ -1049,7 +1049,11 @@ function loadAttachmentPreviews(w) {
     if (inputEl) inputEl.value = ''; // clear file input
     if (latest) {
       if (nameEl) nameEl.textContent = `📄 ${latest.name || 'Existing document'} (${new Date(latest.date).toLocaleDateString('en-MY')})`;
-      if (linkEl) { linkEl.href = latest.data; linkEl.style.display = 'inline'; }
+      if (linkEl) {
+        linkEl.href = '#';
+        linkEl.onclick = (e) => { e.preventDefault(); viewAttachment(latest.data, latest.name, latest.mime); };
+        linkEl.style.display = 'inline';
+      }
     } else {
       if (nameEl) nameEl.textContent = '';
       if (linkEl) linkEl.style.display = 'none';
@@ -1093,7 +1097,7 @@ function updateAttachmentHistoryPreview(type, history) {
           <div style="font-size:11px;color:var(--text-tertiary);">${a.date ? new Date(a.date).toLocaleDateString('en-MY') : ''} ${a.reg ? '· Reg: '+esc(a.reg) : ''} ${a.expiry ? '· Exp: '+formatDate(a.expiry) : ''}</div>
         </div>
         <a href="${a.data}" download="${esc(a.name||'document')}" title="Download" style="color:var(--accent-primary);font-size:14px;text-decoration:none;">⬇️</a>
-        <a href="${a.data}" target="_blank" title="View" style="color:var(--accent-primary);font-size:14px;text-decoration:none;">👁️</a>
+        <button onclick="viewAttachment('${a.data}','${esc(a.name||'document')}','${a.mime||''}')" title="View" style="background:none;border:none;cursor:pointer;color:var(--accent-primary);font-size:14px;padding:0;">👁️</button>
         ${isAdmin() && !a.isNew ? `<button onclick="deleteAttachment('${type}',${i})" title="Delete" style="background:none;border:none;cursor:pointer;color:var(--accent-clay);font-size:14px;padding:0;">🗑️</button>` : ''}
       </div>`).join('')}`;
 }
@@ -1140,7 +1144,7 @@ function openAttachmentsModal(workerId) {
               <div style="font-size:13px;font-weight:600;color:var(--text-primary);">${esc(a.name||'Document')}</div>
               <div style="font-size:11.5px;color:var(--text-tertiary);">${a.date?new Date(a.date).toLocaleDateString('en-MY',{day:'2-digit',month:'short',year:'numeric'}):''} ${a.reg?'· Reg: '+esc(a.reg):''} ${a.expiry?'· Exp: '+formatDate(a.expiry):''}</div>
             </div>
-            <a href="${a.data}" target="_blank" class="btn-ghost btn-sm" style="text-decoration:none;">👁️ View</a>
+            <button class="btn-ghost btn-sm" onclick="viewAttachment('${a.data}','${esc(a.name||'document')}','${a.mime||''}')">👁️ View</button>
             <a href="${a.data}" download="${esc(a.name||'document')}" class="btn-secondary btn-sm" style="text-decoration:none;">⬇️</a>
             ${isAdmin()?`<button onclick="deleteAttachmentFromModal('${w.id}','${t.key}',${i})" class="btn-danger btn-sm">🗑️</button>`:''}
           </div>`).join('')}
@@ -1158,4 +1162,29 @@ async function deleteAttachmentFromModal(workerId, type, index) {
   await saveWorkerToDB(w);
   openAttachmentsModal(workerId); // refresh modal
   showToast('Document deleted.');
+}
+
+// Open base64 file in new tab (browsers block data: href navigation)
+function viewAttachment(data, name, mime) {
+  try {
+    // Convert base64 data URI to blob then open as object URL
+    const base64 = data.split(',')[1];
+    const binary  = atob(base64);
+    const bytes   = new Uint8Array(binary.length);
+    for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+    const blob    = new Blob([bytes], { type: mime || 'application/octet-stream' });
+    const url     = URL.createObjectURL(blob);
+    const win     = window.open(url, '_blank');
+    // Revoke after a delay so the tab has time to load
+    if (win) setTimeout(() => URL.revokeObjectURL(url), 10000);
+    else {
+      // Popup blocked — fallback: trigger download
+      const a = document.createElement('a');
+      a.href = url; a.download = name || 'document';
+      a.click();
+      setTimeout(() => URL.revokeObjectURL(url), 5000);
+    }
+  } catch(e) {
+    showToast('Could not open file: ' + e.message, true);
+  }
 }
