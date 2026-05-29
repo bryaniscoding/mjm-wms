@@ -226,6 +226,7 @@ function exportWorkersPDF(cols, rows, locationFilter, companyFilter) {
       table { border-collapse:collapse; width:100%; table-layout:fixed; }
       th, td { overflow:hidden; }
       td img { max-width:100%; max-height:60px; display:block; margin:0 auto; }
+      thead { display:table-header-group; } /* repeat all header rows on every page */
       .screen-only { display:flex; }
       @media print { .screen-only { display:none !important; } }
     </style>
@@ -236,16 +237,30 @@ function exportWorkersPDF(cols, rows, locationFilter, companyFilter) {
     <span style="font-size:12px;color:#444;">Select <strong>Save as PDF</strong> · paper: <strong>A4 Landscape</strong>.</span>
   </div>
 
-  <div style="text-align:center;font-size:12px;font-weight:700;margin:4px 0 4px;">MJM Groups Worker Profiles</div>
-  <table style="margin-bottom:5px;border:none;width:auto;">
-    <tr><td style="font-size:8.5px;font-weight:700;border:none;padding:1px 8px 1px 0;white-space:nowrap;">AP Quota Company :</td><td style="font-size:8.5px;border:none;">${esc(companyFilter || 'All')}</td></tr>
-    <tr><td style="font-size:8.5px;font-weight:700;border:none;padding:1px 8px 1px 0;white-space:nowrap;">Work Location :</td><td style="font-size:8.5px;border:none;">${esc(locationFilter || 'All')}</td></tr>
-    <tr><td style="font-size:8.5px;color:#666;border:none;padding:1px 8px 1px 0;white-space:nowrap;">Generated :</td><td style="font-size:8.5px;color:#666;border:none;">${now} &nbsp;·&nbsp; ${rows.length} record${rows.length!==1?'s':''}</td></tr>
-  </table>
-
   <table>
     <colgroup>${colgroupHTML}</colgroup>
-    <thead><tr>${thHTML}</tr></thead>
+    <thead>
+      <!-- Row 1: Title -->
+      <tr>
+        <td colspan="${cols.length}" style="text-align:center;font-size:12px;font-weight:700;padding:4px 2px;border:none;">MJM Groups Worker Profiles</td>
+      </tr>
+      <!-- Row 2: AP Quota Company -->
+      <tr>
+        <td style="font-size:8.5px;font-weight:700;border:none;padding:2px 8px 2px 2px;white-space:nowrap;">AP Quota Company :</td>
+        <td colspan="${cols.length - 1}" style="font-size:8.5px;border:none;padding:2px 2px;">${esc(companyFilter || 'All')}</td>
+      </tr>
+      <!-- Row 3: Work Location -->
+      <tr>
+        <td style="font-size:8.5px;font-weight:700;border:none;padding:2px 8px 2px 2px;white-space:nowrap;">Work Location :</td>
+        <td colspan="${cols.length - 1}" style="font-size:8.5px;border:none;padding:2px 2px;">${esc(locationFilter || 'All')}</td>
+      </tr>
+      <!-- Row 4: Generated -->
+      <tr>
+        <td colspan="${cols.length}" style="font-size:8px;color:#666;border:none;padding:1px 2px 3px;">${now} &nbsp;·&nbsp; ${rows.length} record${rows.length!==1?'s':''}</td>
+      </tr>
+      <!-- Row 5: Column headers -->
+      <tr>${thHTML}</tr>
+    </thead>
     <tbody>${trHTML}</tbody>
   </table>
 
