@@ -273,8 +273,8 @@ async function saveApplication() {
     const expiry = document.getElementById('app_new_expiry').value;
     if (!reg)    { showAppError('Registration number is required when Actual Date of Receive is filled.'); return; }
     if (!expiry) { showAppError('New Expiry Date is required when Actual Date of Receive is filled.'); return; }
-    if (!_appAttachment) {
-      // Force show upload group in case it's hidden
+    // Only require upload on first save — subsequent saves of same application don't need another upload
+    if (!_appAttachment && !editingAppId) {
       const grp = document.getElementById('app_attachment_group');
       if (grp) grp.style.display = 'block';
       showAppError('⬆️ Please upload the document file using the 📎 Choose File button above before saving.');
@@ -307,9 +307,11 @@ async function saveApplication() {
   };
 
   // Apply new expiry / registration number to worker record
+  // Only apply legal update on first save (not on subsequent updates to same app)
+  const isFirstSave = !editingAppId;
   if (currentAppWorkerId && currentAppWorkerId !== '__NEW__') {
     const w = workers.find(x => x.id === currentAppWorkerId);
-    if (w) {
+    if (w && isFirstSave) {
       if (!w.legal) w.legal = {};
 
       // Helper: update a doc type field — moves old doc to history, saves new one
@@ -362,7 +364,16 @@ async function saveApplication() {
       if (docType === 'Labour License') applyDocUpdate('license',  'reg');
       if (docType === 'Work Permit')    applyDocUpdate('permit',   'reg');
     }
-  } else if (currentAppWorkerId === '__NEW__') {
+  } else if (!isFirstSave && currentAppWorkerId && currentAppWorkerId !== '__NEW__') {
+    // Subsequent save of same app — just update worker record without touching attachments
+    const w = workers.find(x => x.id === currentAppWorkerId);
+    if (w) {
+      if (newExpiry && docType === 'Passport')       w.legal.passport.expiry = newExpiry;
+      if (newExpiry && docType === 'Labour License') w.legal.license.expiry  = newExpiry;
+      if (newExpiry && docType === 'Work Permit')    w.legal.permit.expiry   = newExpiry;
+    }
+  }
+  if (currentAppWorkerId === '__NEW__') {
     // Worker not saved yet — write back into the open worker form fields
     // so the data is captured when the worker is eventually saved
     if (docType === 'Passport') {
@@ -390,6 +401,7 @@ async function saveApplication() {
     showToast('Application updated.');
   } else {
     applications.unshift(appData);
+    editingAppId = appData.id; // prevent duplicate on subsequent saves in same session
     showToast('Application saved.');
   }
 
