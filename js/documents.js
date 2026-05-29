@@ -144,6 +144,15 @@ function openAppModal(workerId, prefillDocType, prefillAppType, fromWorkerModal)
   document.getElementById('app_duration').value    = '';
   document.getElementById('app_est_receive').value = '';
 
+  // Reset attachment
+  _appAttachment = null;
+  const attachFile = document.getElementById('app_attachment_file');
+  const attachName = document.getElementById('app_attachment_name');
+  const attachGroup = document.getElementById('app_attachment_group');
+  if (attachFile)  attachFile.value = '';
+  if (attachName)  attachName.textContent = '';
+  if (attachGroup) attachGroup.style.display = 'none';
+
   onAppDocTypeChange();
   if (prefillAppType && !LOCKED_TYPE[prefillDocType]) {
     document.getElementById('app_type').value = prefillAppType;
@@ -157,6 +166,12 @@ function openAppModalForEdit(appId) {
   currentAppWorkerId = app.workerId;
   editingAppId       = appId;
   returnToWorker     = false;
+  // Reset attachment for edit too
+  _appAttachment = null;
+  const af = document.getElementById('app_attachment_file');
+  const an = document.getElementById('app_attachment_name');
+  if (af) af.value = '';
+  if (an) an.textContent = '';
 
   document.getElementById('appModalTitle').textContent   = 'Update Application';
   document.getElementById('app_worker_name').value       = app.workerName    || '';
@@ -258,7 +273,12 @@ async function saveApplication() {
     const expiry = document.getElementById('app_new_expiry').value;
     if (!reg)    { showAppError('Registration number is required when Actual Date of Receive is filled.'); return; }
     if (!expiry) { showAppError('New Expiry Date is required when Actual Date of Receive is filled.'); return; }
-    if (!_appAttachment) { showAppError('Please upload the new document before saving.'); return; }
+    if (!_appAttachment) {
+      showAppError('Please upload the new document (📎 Upload Document) before saving. This is required to update the document record.');
+      // Scroll upload field into view
+      document.getElementById('app_attachment_group')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      return;
+    }
   }
 
   const days    = DURATION_RULES[docType]?.[appType] || 0;
@@ -602,8 +622,15 @@ function onAppAttachmentChange(input) {
 }
 
 function toggleAppAttachmentField() {
-  const reg    = document.getElementById('app_reg_number')?.value.trim();
-  const group  = document.getElementById('app_attachment_group');
-  // Show upload field whenever a reg number is entered
-  if (group) group.style.display = reg ? 'block' : 'none';
+  const reg     = document.getElementById('app_reg_number')?.value.trim();
+  const appType = document.getElementById('app_type')?.value || '';
+  const actual  = document.getElementById('app_actual_receive')?.value || '';
+  const group   = document.getElementById('app_attachment_group');
+  if (!group) return;
+
+  // Show upload when:
+  // - reg number is entered, OR
+  // - actual receive date is filled (document received — need to upload it)
+  const shouldShow = !!(reg || actual);
+  group.style.display = shouldShow ? 'block' : 'none';
 }
