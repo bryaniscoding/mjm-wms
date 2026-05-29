@@ -605,10 +605,22 @@ function getPriceAsOf(docType, dateStr) {
 function saveData() { /* replaced by individual save*ToDB calls */ }
 
 async function cleanOrphanedFinancials() {
-  const appIds = new Set(applications.map(a => a.id));
+  // Valid IDs = application IDs + AP quota IDs + slot IDs (aq.id_slotN)
+  const appIds  = new Set(applications.map(a => a.id));
+  const aqIds   = new Set(apQuotas.map(q => q.id));
 
-  // Find orphaned entries — no app_id or app_id not in current applications
-  const orphaned = (window._financials || []).filter(f => !f.appId || !appIds.has(f.appId));
+  function isValidAppId(appId) {
+    if (!appId) return false;
+    if (appIds.has(appId)) return true;   // regular application
+    if (aqIds.has(appId))  return true;   // AP quota application
+    // Slot assignment IDs are like "aq-id_slotN"
+    const base = appId.split('_slot')[0];
+    if (aqIds.has(base))   return true;
+    return false;
+  }
+
+  // Find orphaned entries — no app_id or app_id not in any valid set
+  const orphaned = (window._financials || []).filter(f => !isValidAppId(f.appId));
 
   if (!orphaned.length) {
     showToast('No orphaned records found. Financial report is clean.');
@@ -631,7 +643,7 @@ async function cleanOrphanedFinancials() {
   await Promise.all(delPromises);
 
   // Remove from memory
-  window._financials = (window._financials || []).filter(f => f.appId && appIds.has(f.appId));
+  window._financials = (window._financials || []).filter(f => isValidAppId(f.appId));
 
   if (typeof renderFinancialTable === 'function') renderFinancialTable();
   showToast(`${orphaned.length} orphaned record${orphaned.length !== 1 ? 's' : ''} removed.`);
