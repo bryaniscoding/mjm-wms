@@ -32,6 +32,11 @@ async function initAuth() {
         // Token still valid — restore session then load role/profile
         applySession(parsed);
         await loadUserRole();
+        // loadUserRole may have called authLogout() for inactive/pending users
+        // Check session is still valid before returning true
+        if (!_session || !_userRole || ['pending','inactive','blocked'].includes(_userRole)) {
+          return false;
+        }
         return true;
       }
       // Token expired — try refresh
@@ -39,6 +44,9 @@ async function initAuth() {
       if (refreshed && !refreshed.error) {
         applySession(refreshed);
         await loadUserRole();
+        if (!_session || !_userRole || ['pending','inactive','blocked'].includes(_userRole)) {
+          return false;
+        }
         return true;
       }
     } catch(e) { /* fall through to login screen */ }
@@ -404,7 +412,8 @@ function applyRoleUI() {
     navEl.style.display = hidden ? 'none' : '';
   });
 
-  const displayName = _displayName || _userEmail.split('@')[0] || 'User';
+  const emailFallback = _userEmail || _session?.user?.email || '';
+  const displayName = _displayName || (emailFallback ? emailFallback.split('@')[0] : '') || 'User';
   const initials    = displayName.trim().split(/\s+/).map(w=>w[0]).join('').toUpperCase().slice(0,2) || '?';
   const roleColors  = { admin:'#1a8c01', editor:'#d4820a', viewer:'#1460aa' };
   const roleColor   = roleColors[_userRole] || '#8aaa82';
@@ -886,7 +895,8 @@ let _presenceChannel = null;
 
 async function initPresence() {
   const user = currentUser(); if (!user) return;
-  const displayName = _displayName || _userEmail.split('@')[0] || 'User';
+  const emailFallback = _userEmail || _session?.user?.email || '';
+  const displayName = _displayName || (emailFallback ? emailFallback.split('@')[0] : '') || 'User';
 
   async function heartbeat() {
     try {
