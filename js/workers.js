@@ -154,11 +154,12 @@ function renderWorkerTable() {
           : `<button class="btn-addnew"  onclick="openAppModal('${w.id}','Work Permit','New Application',false)">+ Add New</button>`}
       </div></td>
       <td><div class="action-group">
-        <button class="action-btn viewer-ok" title="View"       onclick="viewWorker('${w.id}')">👁️</button>
-        <button class="action-btn viewer-ok" title="Photo"      onclick="downloadPhoto('${w.id}')">⬇️</button>
-        <button class="action-btn" title="Edit"                  onclick="editWorker('${w.id}')">✏️</button>
-        <button class="action-btn" title="Terminate" style="color:var(--accent-clay);" onclick="openTerminationModal('${w.id}')">🚪</button>
-        <button class="action-btn danger" title="Delete"          onclick="openDeleteModal('${w.id}')">🗑️</button>
+        <button class="action-btn viewer-ok" title="View Profile"   onclick="viewWorker('${w.id}')">👁️</button>
+        <button class="action-btn viewer-ok" title="Documents"      onclick="openAttachmentsModal('${w.id}')">📎</button>
+        <button class="action-btn viewer-ok" title="Download Photo" onclick="downloadPhoto('${w.id}')">⬇️</button>
+        <button class="action-btn"           title="Edit"            onclick="editWorker('${w.id}')">✏️</button>
+        <button class="action-btn"           title="Terminate"       onclick="openTerminationModal('${w.id}')" style="color:var(--accent-clay);">🚪</button>
+        <button class="action-btn danger"    title="Delete"          onclick="openDeleteModal('${w.id}')">🗑️</button>
       </div></td>
     </tr>`;
   }).join('');

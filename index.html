@@ -691,6 +691,9 @@
 
       <!-- TAB 1: LEGAL -->
       <div class="tab-panel" id="tab-1">
+        <div style="display:flex;justify-content:flex-end;margin-bottom:12px;">
+          <button class="btn-ghost btn-sm" onclick="if(editingId)openAttachmentsModal(editingId);else showToast('Save the worker first to view documents.');" style="display:flex;align-items:center;gap:6px;">📎 View All Documents & History</button>
+        </div>
         <div id="legal-app-indicators" class="legal-app-indicators" style="display:none;"></div>
         <div id="legal-direct-entry-note" style="display:none;margin-bottom:16px;padding:12px 16px;background:rgba(139,105,20,.08);border:1px solid rgba(139,105,20,.3);border-radius:var(--r-md);font-size:13px;color:var(--accent-primary);line-height:1.7;">
           ✏️ <strong>New worker — direct entry mode.</strong> Type registration numbers and expiry dates directly. These will be saved when you click <strong>Save Worker</strong>.
