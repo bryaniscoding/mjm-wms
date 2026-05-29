@@ -177,6 +177,7 @@ function mapWorkerFromDB(r) {
     id: r.id,
     general: {
       name: r.name, workerId: r.worker_id, nationality: r.nationality,
+      gender: r.gender || '',
       passport: r.passport, joining: r.joining, recruitment: r.recruitment,
       location: r.location, termination: r.termination, departure: r.departure,
       abscondedDate: r.absconded_date, remarks: r.remarks, photo: r.photo,
