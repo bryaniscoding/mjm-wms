@@ -717,7 +717,8 @@ function viewWorker(id) {
     </div></div>
     <div class="profile-fields">
       <div class="profile-section-sep">General Information</div>
-      ${pf('Nationality', g.nationality)}         ${pf('IC / Passport', g.passport)}
+      ${pf('Gender', g.gender || '—')}              ${pf('Nationality', g.nationality)}
+      ${pf('IC / Passport', g.passport)}
       ${pf('Joining Date', formatDate(g.joining))}  ${pf('Recruitment Date', formatDate(g.recruitment))}
       ${pf('Work Location', g.location)}            ${pf('Termination', formatDate(g.termination))}
       ${pf('Departure', formatDate(g.departure))}   ${pf('Worker ID', g.workerId)}
