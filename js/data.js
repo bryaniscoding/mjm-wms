@@ -203,6 +203,7 @@ function mapWorkerToDB(w) {
   return {
     id:                    w.id,
     name:                  g.name          || null,
+    gender:                g.gender         || null,
     worker_id:             g.workerId      || null,
     nationality:           g.nationality   || null,
     passport:              g.passport      || null,

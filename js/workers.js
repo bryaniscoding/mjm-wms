@@ -234,7 +234,7 @@ function closeModalOutside(e) { closeModalOutsideStack(e, 'workerModal'); }
 
 // ── FORM CLEAR / POPULATE ─────────────────────────────────────
 const FIELD_IDS = [
-  'f_name','f_workerid','f_nationality','f_passport','f_recruitment','f_joining',
+  'f_name','f_gender','f_workerid','f_nationality','f_passport','f_recruitment','f_joining',
   'f_termination','f_departure','f_remarks',
   'f_passport_num','f_passport_expiry',
   'f_quota_kdn','f_quota_slot',
