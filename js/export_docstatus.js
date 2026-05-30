@@ -18,13 +18,13 @@ const DOCSTATUS_INFO_COLS = [
   { key: 'yearsService',label: 'Years',            width: 8.9, group: 'service' },
   { key: 'monthsService',label:'Months',           width: 8.9, group: 'service' },
   { key: 'daysService', label: 'Days',             width: 8.9, group: 'service' },
-  { key: 'passportNo',  label: 'Number',           width: 13.2, group: 'passport' },
+  { key: 'passportNo',  label: 'Number',           width: 18,   group: 'passport' },
   { key: 'passportExpiry', label: 'Expiry Date',   width: 13.2, group: 'passport' },
   { key: 'passportDays',   label: 'Remaining Days',width: 14.9, group: 'passport' },
   { key: 'licenseNo',   label: 'Number',           width: 33,   group: 'license'  },
   { key: 'licenseExpiry',  label: 'Expiry Date',   width: 13.2, group: 'license'  },
   { key: 'licenseDays',    label: 'Remaining Days',width: 14.9, group: 'license'  },
-  { key: 'permitNo',    label: 'Number',           width: 13.2, group: 'permit'   },
+  { key: 'permitNo',    label: 'Number',           width: 22,   group: 'permit'   },
   { key: 'permitExpiry',   label: 'Expiry Date',   width: 13.2, group: 'permit'   },
   { key: 'permitDays',     label: 'Remaining Days',width: 14.9, group: 'permit'   },
 ];
@@ -187,9 +187,9 @@ function exportDocStatusPDF(cols, rows, locF, compF, catF, staF) {
     workerId:12, name:14, status:10, gender:10, category:11,
     quotaCompany:26, location:17, joiningDate:13, socso:14,
     yearsService:9, monthsService:9, daysService:9,
-    passportNo:15, passportExpiry:13, passportDays:13,
+    passportNo:20, passportExpiry:13, passportDays:13,
     licenseNo:30, licenseExpiry:13, licenseDays:13,
-    permitNo:15, permitExpiry:13, permitDays:13,
+    permitNo:22, permitExpiry:13, permitDays:13,
   };
 
   const colgroupHTML = cols.map(c => `<col style="width:${COL_WIDTHS_MM[c.key]||12}mm;"/>`).join('');
