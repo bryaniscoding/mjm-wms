@@ -128,8 +128,8 @@ function initialiseDashDates() {
 
   // Default 'from': 30 days ago (for day view)
   if (fromEl) {
-    const d30 = new Date(); d30.setDate(d30.getDate() - 30);
-    fromEl.value = `${d30.getFullYear()}-${String(d30.getMonth()+1).padStart(2,'0')}-${String(d30.getDate()).padStart(2,'0')}`;
+    const d7 = new Date(); d7.setDate(d7.getDate() - 7);
+    fromEl.value = `${d7.getFullYear()}-${String(d7.getMonth()+1).padStart(2,'0')}-${String(d7.getDate()).padStart(2,'0')}`;
   }
 }
 
@@ -368,7 +368,7 @@ function drawComboChart(canvas, labels, snapshots, gran) {
   ctx.font = '11px DM Sans,sans-serif';
 
   // Measure label width to decide step
-  const sampleLabel = gran === 'month' ? "Jan '24" : gran === 'year' ? '2024' : gran === 'day' ? '26 May' : '01-01';
+  const sampleLabel = gran === 'month' ? "Jan '24" : gran === 'year' ? '2024' : gran === 'day' ? "26 May '26" : '01-01';
   const labelW = ctx.measureText(sampleLabel).width + 12;
   const maxFit = Math.max(1, Math.floor(cW / labelW));
   const step = Math.ceil(n / maxFit);
