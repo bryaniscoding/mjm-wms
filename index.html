@@ -268,9 +268,7 @@
   <div class="page" id="page-doc-status">
     <div class="page-header">
       <div><h2>Document Status</h2><p class="page-sub">Track all critical worker documents with recorded expiry dates.</p></div>
-      <div style="position:relative;" id="export-docs-wrap">
-
-      </div>
+      <button class="btn-ghost btn-sm" onclick="openDocStatusExportPicker()" style="display:flex;align-items:center;gap:6px;">⬇ Export</button>
     </div>
     <div class="filter-bar">
       <div class="search-wrap"><input class="search-input" type="text" id="docSearch" placeholder="Search…"/><span class="search-icon-right">🔍</span></div>
@@ -1247,6 +1245,30 @@
   </div>
 </div>
 
+<!-- ═══ MODAL: DOC STATUS EXPORT PICKER ═══ -->
+<div class="modal-overlay" id="docStatusExportPickerModal" onclick="closeDocStatusExportPickerOutside(event)">
+  <div class="modal modal-sm">
+    <div class="modal-header">
+      <h3>Export Document Status</h3>
+      <button class="modal-close" onclick="closeDocStatusExportPicker()">✕</button>
+    </div>
+    <div class="modal-body" style="padding:0;">
+      <label style="display:flex;align-items:center;gap:10px;padding:11px 14px;background:var(--bg-surface);border-bottom:2px solid var(--border-default);cursor:pointer;font-family:var(--font-ui);font-weight:700;font-size:13px;">
+        <input type="checkbox" id="dsp-select-all" style="width:16px;height:16px;accent-color:var(--accent-primary);cursor:pointer;" onchange="toggleDspAll(this)"/>
+        Select All Columns
+      </label>
+      <div id="dsp-col-list" style="max-height:400px;overflow-y:auto;"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-secondary" onclick="closeDocStatusExportPicker()">Cancel</button>
+      <div style="display:flex;gap:8px;">
+        <button class="btn-ghost" onclick="doDocStatusExport('pdf')">🖨 PDF</button>
+        <button class="btn-primary" onclick="doDocStatusExport('xlsx')">📊 Excel</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <div class="toast" id="toast"></div>
 
 <!-- ═══ SCRIPTS — load order matters ═══ -->
@@ -1259,6 +1281,7 @@
 <script src="js/claims.js"></script>
 <script src="js/workers.js"></script>
 <script src="js/export_workers.js"></script>
+<script src="js/export_docstatus.js"></script>
 <script src="js/documents.js"></script>
 <script src="js/apquota.js"></script>
 <script src="js/financial.js"></script>
