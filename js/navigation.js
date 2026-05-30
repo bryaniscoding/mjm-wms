@@ -112,17 +112,24 @@ function updateDashboardStats() {
 
 function initialiseDashDates() {
   const now    = new Date();
-  const today  = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}`;
+  const yyyy   = now.getFullYear();
+  const mm     = String(now.getMonth()+1).padStart(2,'0');
+  const dd     = String(now.getDate()).padStart(2,'0');
+  const today  = `${yyyy}-${mm}-${dd}`;
   const fromEl = document.getElementById('dash-date-from');
   const toEl   = document.getElementById('dash-date-to');
+  const granEl = document.getElementById('dash-granularity');
 
   // Always set 'to' to today
   if (toEl) toEl.value = today;
 
-  // Always reset 'from' to 3 years ago as default
+  // Default granularity: By Day
+  if (granEl) granEl.value = 'day';
+
+  // Default 'from': 30 days ago (for day view)
   if (fromEl) {
-    const d = new Date(); d.setFullYear(d.getFullYear() - 3);
-    fromEl.value = d.toISOString().slice(0,10);
+    const d30 = new Date(); d30.setDate(d30.getDate() - 30);
+    fromEl.value = `${d30.getFullYear()}-${String(d30.getMonth()+1).padStart(2,'0')}-${String(d30.getDate()).padStart(2,'0')}`;
   }
 }
 
@@ -151,13 +158,25 @@ function resetDashChartFilter() {
 
 function buildLabels(from, to, granularity) {
   const labels = [];
-  // Parse date strings manually to avoid UTC timezone shift
-  // "2026-05-26" parsed as new Date() becomes May 25 in UTC+8 timezones
   function parseLocal(str) {
     const [y,m,d] = str.split('-').map(Number);
     return new Date(y, m-1, d, 23, 59, 59, 999);
   }
   const end = parseLocal(to);
+
+  // ── BY DAY ──────────────────────────────────────────────────
+  if (granularity === 'day') {
+    const [fy,fm,fd] = from.split('-').map(Number);
+    const cur = new Date(fy, fm-1, fd, 0, 0, 0, 0);
+    while (cur <= end) {
+      const yy = cur.getFullYear();
+      const mm = String(cur.getMonth()+1).padStart(2,'0');
+      const dd = String(cur.getDate()).padStart(2,'0');
+      labels.push(`${yy}-${mm}-${dd}`);
+      cur.setDate(cur.getDate() + 1);
+    }
+    return labels;
+  }
 
   if (granularity === 'year') {
     const cur = new Date(new Date(from).getFullYear(), 0, 1);
@@ -203,6 +222,10 @@ function getSnapshotForPeriod(label, granularity) {
   } else if (granularity === 'week') {
     periodStart = new Date(label);
     periodEnd   = new Date(label); periodEnd.setDate(periodEnd.getDate() + 6);
+  } else if (granularity === 'day') {
+    const [y,m,d] = label.split('-').map(Number);
+    periodStart = new Date(y, m-1, d, 0, 0, 0, 0);
+    periodEnd   = new Date(y, m-1, d, 23, 59, 59, 999);
   } else {
     const [y,m] = label.split('-').map(Number);
     periodStart = new Date(y, m-1, 1);
@@ -345,7 +368,7 @@ function drawComboChart(canvas, labels, snapshots, gran) {
   ctx.font = '11px DM Sans,sans-serif';
 
   // Measure label width to decide step
-  const sampleLabel = gran === 'month' ? "Jan '24" : gran === 'year' ? '2024' : '01-01';
+  const sampleLabel = gran === 'month' ? "Jan '24" : gran === 'year' ? '2024' : gran === 'day' ? '26 May' : '01-01';
   const labelW = ctx.measureText(sampleLabel).width + 12;
   const maxFit = Math.max(1, Math.floor(cW / labelW));
   const step = Math.ceil(n / maxFit);
