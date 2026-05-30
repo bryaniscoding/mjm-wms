@@ -51,7 +51,7 @@ function navigateTo(page) {
 
   if (page === 'worker-list')        { populateWorkerFilters(); renderWorkerTable(); }
   if (page === 'worker-termination')  { renderTerminationTable(); }
-  if (page === 'dashboard')          { initialiseDashDates(); updateDashboardStats(); renderDashboardChart(); renderDashPanels(); renderOnboardingBanner(); if(typeof renderNewRegBanner==='function') renderNewRegBanner(); }
+  if (page === 'dashboard')          { initialiseDashDates(); updateDashboardStats(); renderDashboardChart(); renderDashPanels(); renderOnboardingBanner(); if(typeof renderNewRegBanner==='function') renderNewRegBanner(); initFinMonthSelector(); renderFinancialOverview(); }
   if (page === 'doc-status')         { populateDocFilters(); renderDocTable(); }
   if (page === 'doc-application')    { populateAppFilters(); renderAppTable(); }
   if (page === 'ap-quota')           renderApQuotaTable();
@@ -616,4 +616,179 @@ function renderOnboardingBanner() {
           </div>`).join('')}
       </div>
     </div>`;
+}
+
+// ══════════════════════════════════════════════════════════════
+//  SECTION D — MONTHLY FINANCIAL OVERVIEW
+// ══════════════════════════════════════════════════════════════
+
+let _finChartInstance = null;
+
+function initFinMonthSelector() {
+  const sel = document.getElementById('fin-month-select');
+  if (!sel) return;
+
+  // Build last 24 months list
+  const months = [];
+  const now = new Date();
+  for (let i = 0; i < 24; i++) {
+    const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+    const val = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
+    const label = d.toLocaleDateString('en-MY', { month:'long', year:'numeric' });
+    months.push({ val, label });
+  }
+
+  sel.innerHTML = months.map(m =>
+    `<option value="${m.val}">${m.label}</option>`
+  ).join('');
+
+  // Default to current month
+  const defaultVal = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
+  sel.value = defaultVal;
+}
+
+function renderFinancialOverview() {
+  const sel = document.getElementById('fin-month-select');
+  if (!sel) return;
+  const [yr, mo] = sel.value.split('-').map(Number);
+
+  const fins = (window._financials || []).filter(f => {
+    if (!f.date) return false;
+    const d = new Date(f.date);
+    return d.getFullYear() === yr && d.getMonth() + 1 === mo;
+  });
+
+  // ── KPI BOXES ──────────────────────────────────────────────
+  const docTypes = [
+    { key: 'Passport',       label: 'Passport Applied / Renewed',        color: '#2e7d32', icon: '🛂' },
+    { key: 'Labour License', label: 'Labour License Applied / Renewed',  color: '#e65100', icon: '📋' },
+    { key: 'Work Permit',    label: 'Work Permit Applied / Renewed',     color: '#6a1b9a', icon: '📄' },
+    { key: 'AP Quota',       label: 'AP Quota Applied',                  color: '#d4820a', icon: '◎'  },
+  ];
+
+  const grid = document.getElementById('fin-kpi-grid');
+  if (grid) {
+    grid.innerHTML = docTypes.map(dt => {
+      const recs     = fins.filter(f => f.docType === dt.key);
+      const applied  = recs.filter(f => (f.appType||'').toLowerCase().includes('new')).length;
+      const renewed  = recs.filter(f => (f.appType||'').toLowerCase().includes('renew')).length;
+      const total    = recs.reduce((s, f) => s + (f.total || 0), 0);
+      const showRenew = dt.key !== 'AP Quota'; // AP Quota has no renew
+
+      return `<div class="dash-kpi fade-up" style="border-top:3px solid ${dt.color};padding:16px 18px;">
+        <div class="dash-kpi-label" style="font-size:11.5px;margin-bottom:10px;line-height:1.3;">${dt.icon} ${dt.label}</div>
+        <div style="display:flex;flex-direction:column;gap:5px;">
+          <div style="display:flex;justify-content:space-between;font-size:12.5px;">
+            <span style="color:var(--text-secondary);">Applied</span>
+            <span style="font-weight:700;color:var(--text-primary);">${applied}</span>
+          </div>
+          ${showRenew ? `<div style="display:flex;justify-content:space-between;font-size:12.5px;">
+            <span style="color:var(--text-secondary);">Renewed</span>
+            <span style="font-weight:700;color:var(--text-primary);">${renewed}</span>
+          </div>` : ''}
+          <div style="display:flex;justify-content:space-between;font-size:12.5px;padding-top:5px;border-top:1px solid var(--border-default);margin-top:2px;">
+            <span style="color:var(--text-secondary);">Total Cost</span>
+            <span style="font-weight:700;color:${dt.color};">RM ${total.toLocaleString('en-MY',{minimumFractionDigits:2})}</span>
+          </div>
+        </div>
+      </div>`;
+    }).join('');
+  }
+
+  // ── COMBO CHART ───────────────────────────────────────────
+  // Build last 12 months for chart
+  const chartMonths = [];
+  for (let i = 11; i >= 0; i--) {
+    const d = new Date(yr, mo - 1 - i, 1);
+    chartMonths.push({
+      yr: d.getFullYear(), mo: d.getMonth() + 1,
+      label: d.toLocaleDateString('en-MY', { month: 'short', year: '2-digit' }),
+    });
+  }
+
+  const allFin = window._financials || [];
+
+  function monthTotal(docType, y, m) {
+    return allFin
+      .filter(f => f.docType === docType && f.date &&
+        new Date(f.date).getFullYear() === y && new Date(f.date).getMonth() + 1 === m)
+      .reduce((s, f) => s + (f.total || 0), 0);
+  }
+
+  const labels       = chartMonths.map(m => m.label);
+  const passportData = chartMonths.map(m => monthTotal('Passport',       m.yr, m.mo));
+  const licenseData  = chartMonths.map(m => monthTotal('Labour License', m.yr, m.mo));
+  const permitData   = chartMonths.map(m => monthTotal('Work Permit',    m.yr, m.mo));
+  const quotaData    = chartMonths.map(m => monthTotal('AP Quota',       m.yr, m.mo));
+  const totalData    = chartMonths.map((_,i) => passportData[i] + licenseData[i] + permitData[i] + quotaData[i]);
+
+  const canvas = document.getElementById('finChart');
+  if (!canvas) return;
+
+  if (_finChartInstance) { _finChartInstance.destroy(); _finChartInstance = null; }
+
+  const isDark = document.body.getAttribute('data-theme') === 'dark';
+  const gridCol = isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.06)';
+  const txtCol  = isDark ? '#aaa' : '#666';
+
+  _finChartInstance = new Chart(canvas, {
+    data: {
+      labels,
+      datasets: [
+        {
+          type: 'line', label: 'Total Cost',
+          data: totalData,
+          borderColor: '#1460aa', backgroundColor: 'rgba(20,96,170,0.1)',
+          borderWidth: 2.5, pointRadius: 4, pointBackgroundColor: '#1460aa',
+          fill: true, tension: 0.3, yAxisID: 'y', order: 0,
+        },
+        {
+          type: 'bar', label: 'Passport',
+          data: passportData, backgroundColor: 'rgba(46,125,50,0.75)',
+          borderRadius: 3, yAxisID: 'y', order: 1,
+        },
+        {
+          type: 'bar', label: 'Labour License',
+          data: licenseData, backgroundColor: 'rgba(230,81,0,0.75)',
+          borderRadius: 3, yAxisID: 'y', order: 2,
+        },
+        {
+          type: 'bar', label: 'Work Permit',
+          data: permitData, backgroundColor: 'rgba(106,27,154,0.75)',
+          borderRadius: 3, yAxisID: 'y', order: 3,
+        },
+        {
+          type: 'bar', label: 'AP Quota',
+          data: quotaData, backgroundColor: 'rgba(212,130,10,0.75)',
+          borderRadius: 3, yAxisID: 'y', order: 4,
+        },
+      ],
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      interaction: { mode: 'index', intersect: false },
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          callbacks: {
+            label: ctx => ` ${ctx.dataset.label}: RM ${(ctx.parsed.y||0).toLocaleString('en-MY',{minimumFractionDigits:2})}`,
+          },
+        },
+      },
+      scales: {
+        x: {
+          grid: { color: gridCol },
+          ticks: { color: txtCol, font: { size: 11 } },
+        },
+        y: {
+          grid: { color: gridCol },
+          ticks: {
+            color: txtCol, font: { size: 11 },
+            callback: v => 'RM ' + (v >= 1000 ? (v/1000).toFixed(1)+'k' : v),
+          },
+          beginAtZero: true,
+        },
+      },
+    },
+  });
 }
