@@ -51,7 +51,7 @@ function navigateTo(page) {
 
   if (page === 'worker-list')        { populateWorkerFilters(); renderWorkerTable(); }
   if (page === 'worker-termination')  { renderTerminationTable(); }
-  if (page === 'dashboard')          { initialiseDashDates(); updateDashboardStats(); renderDashboardChart(); renderDashPanels(); renderOnboardingBanner(); if(typeof renderNewRegBanner==='function') renderNewRegBanner(); initFinMonthSelector(); renderFinancialOverview(); }
+  if (page === 'dashboard')          { initialiseDashDates(); updateDashboardStats(); renderDashboardChart(); renderDashPanels(); renderOnboardingBanner(); if(typeof renderNewRegBanner==='function') renderNewRegBanner(); initFinMonthSelector(); setTimeout(renderFinancialOverview, 300); }
   if (page === 'doc-status')         { populateDocFilters(); renderDocTable(); }
   if (page === 'doc-application')    { populateAppFilters(); renderAppTable(); }
   if (page === 'ap-quota')           renderApQuotaTable();
@@ -652,28 +652,36 @@ function renderFinancialOverview() {
   if (!sel) return;
   const [yr, mo] = sel.value.split('-').map(Number);
 
+  // Wait for financials to be loaded
   const fins = (window._financials || []).filter(f => {
     if (!f.date) return false;
     const d = new Date(f.date);
     return d.getFullYear() === yr && d.getMonth() + 1 === mo;
   });
 
+  console.log(`[FinOverview] ${yr}-${mo}: ${fins.length} records from ${(window._financials||[]).length} total`);
+  if (fins.length) console.log('[FinOverview] sample:', fins[0]);
+
   // ── KPI BOXES ──────────────────────────────────────────────
   const docTypes = [
-    { key: 'Passport',       label: 'Passport Applied / Renewed',        color: '#2e7d32', icon: '🛂' },
-    { key: 'Labour License', label: 'Labour License Applied / Renewed',  color: '#e65100', icon: '📋' },
-    { key: 'Work Permit',    label: 'Work Permit Applied / Renewed',     color: '#6a1b9a', icon: '📄' },
-    { key: 'AP Quota',       label: 'AP Quota Applied',                  color: '#d4820a', icon: '◎'  },
+    { key: 'Passport',       label: 'Passport Applied / Renewed',       color: '#2e7d32', icon: '🛂' },
+    { key: 'Labour License', label: 'Labour License Applied / Renewed', color: '#e65100', icon: '📋' },
+    { key: 'Work Permit',    label: 'Work Permit Applied / Renewed',    color: '#6a1b9a', icon: '📄' },
+    { key: 'AP Quota',       label: 'AP Quota Applied',                 color: '#d4820a', icon: '◎'  },
   ];
 
   const grid = document.getElementById('fin-kpi-grid');
   if (grid) {
     grid.innerHTML = docTypes.map(dt => {
-      const recs     = fins.filter(f => f.docType === dt.key);
-      const applied  = recs.filter(f => (f.appType||'').toLowerCase().includes('new')).length;
-      const renewed  = recs.filter(f => (f.appType||'').toLowerCase().includes('renew')).length;
-      const total    = recs.reduce((s, f) => s + (f.total || 0), 0);
-      const showRenew = dt.key !== 'AP Quota'; // AP Quota has no renew
+      const recs    = fins.filter(f => f.docType === dt.key);
+      // appType matching: 'New Application', 'New', 'Renew', 'Renewal', 'Slot Assignment'
+      const applied = recs.filter(f => {
+        const t = (f.appType||'').toLowerCase();
+        return t.includes('new') || t.includes('slot');
+      }).length;
+      const renewed = recs.filter(f => (f.appType||'').toLowerCase().includes('renew')).length;
+      const total   = recs.reduce((s, f) => s + (parseFloat(f.total)||0), 0);
+      const showRenew = dt.key !== 'AP Quota';
 
       return `<div class="dash-kpi fade-up" style="border-top:3px solid ${dt.color};padding:16px 18px;">
         <div class="dash-kpi-label" style="font-size:11.5px;margin-bottom:10px;line-height:1.3;">${dt.icon} ${dt.label}</div>
@@ -712,7 +720,7 @@ function renderFinancialOverview() {
     return allFin
       .filter(f => f.docType === docType && f.date &&
         new Date(f.date).getFullYear() === y && new Date(f.date).getMonth() + 1 === m)
-      .reduce((s, f) => s + (f.total || 0), 0);
+      .reduce((s, f) => s + (parseFloat(f.total)||0), 0);
   }
 
   const labels       = chartMonths.map(m => m.label);
