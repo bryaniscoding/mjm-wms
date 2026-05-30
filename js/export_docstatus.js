@@ -222,6 +222,8 @@ function exportDocStatusPDF(cols, rows, locF, compF, catF, staF) {
       body{margin:0;font-family:Calibri,Arial,sans-serif;font-size:7.5px;}
       table{border-collapse:collapse;width:100%;table-layout:fixed;}
       th,td{overflow:hidden;}
+      .info-table{table-layout:auto;width:auto;margin-bottom:2px;}
+      .info-table td{border:none;padding:1px 8px 1px 0;font-size:8.5px;white-space:nowrap;}
       thead{display:table-header-group;}
       .screen-only{display:flex;}
       @media print{.screen-only{display:none!important;}}
@@ -231,15 +233,21 @@ function exportDocStatusPDF(cols, rows, locF, compF, catF, staF) {
     <button onclick="window.print()" style="background:${ACCENT};color:#fff;border:none;padding:10px 24px;border-radius:7px;font-size:13px;font-weight:700;cursor:pointer;">🖨 Print / Save as PDF</button>
     <span style="font-size:12px;color:#444;">Select <strong>Save as PDF</strong> · paper: <strong>A4 Landscape</strong></span>
   </div>
+
+  <!-- Info block: separate auto-layout table so labels are never squeezed -->
+  <div style="text-align:center;font-size:11px;font-weight:700;margin:3px 0 4px;">MJM Groups Worker Legal Documents Status</div>
+  <table class="info-table">
+    <tr><td style="font-weight:700;">AP Quota Company :</td><td>${esc(compF||'All')}</td></tr>
+    <tr><td style="font-weight:700;">Work Location :</td><td>${esc(locF||'All')}</td></tr>
+    <tr><td style="font-weight:700;">Document Types :</td><td>All</td></tr>
+    <tr><td style="font-weight:700;">Expiry Date Range :</td><td>All</td></tr>
+    <tr><td style="color:#666;">Generated :</td><td style="color:#666;">${now} &nbsp;·&nbsp; ${rows.length} record${rows.length!==1?'s':''}</td></tr>
+  </table>
+
+  <!-- Data table: fixed layout for column width control -->
   <table>
     <colgroup>${colgroupHTML}</colgroup>
     <thead>
-      <tr><td colspan="${cols.length}" style="text-align:center;font-size:11px;font-weight:700;padding:3px;border:none;">MJM Groups Worker Legal Documents Status</td></tr>
-      <tr><td style="font-size:8px;font-weight:700;border:none;white-space:nowrap;padding:1px 6px 1px 0;">AP Quota Company :</td><td colspan="${cols.length-1}" style="font-size:8px;border:none;padding:1px 0;">${esc(compF||'All')}</td></tr>
-      <tr><td style="font-size:8px;font-weight:700;border:none;white-space:nowrap;padding:1px 6px 1px 0;">Work Location :</td><td colspan="${cols.length-1}" style="font-size:8px;border:none;padding:1px 0;">${esc(locF||'All')}</td></tr>
-      <tr><td style="font-size:8px;font-weight:700;border:none;white-space:nowrap;padding:1px 6px 1px 0;">Document Types :</td><td colspan="${cols.length-1}" style="font-size:8px;border:none;padding:1px 0;">All</td></tr>
-      <tr><td style="font-size:8px;font-weight:700;border:none;white-space:nowrap;padding:1px 6px 1px 0;">Expiry Date Range :</td><td colspan="${cols.length-1}" style="font-size:8px;border:none;padding:1px 0;">All</td></tr>
-      <tr><td colspan="${cols.length}" style="font-size:7.5px;color:#666;border:none;padding:1px 0 3px;">${now} &nbsp;·&nbsp; ${rows.length} record${rows.length!==1?'s':''}</td></tr>
       <tr>${th1}</tr>
       <tr>${th2}</tr>
     </thead>
